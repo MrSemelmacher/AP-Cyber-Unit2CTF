@@ -3,1267 +3,1191 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>A.N.N. WIRETAP (Unit 3)</title>
+<title>A.N.N. VaultRun (Unit 2)</title>
 <style>
   :root{
-    --bg:#04070a; --panel:#0a1016; --line:#16323f;
-    --green:#4dffa0; --dim:#1d7a52; --cyan:#3fe0e8;
-    --teal:#158158; --blue:#058DC7; --lime:#50B432;
-    --amber:#f5c451; --red:#ff6b60;
-    --text:#c3ecdf; --muted:#4d6b74;
+    --bg:#050807; --panel:#0a1210; --line:#1c3a33;
+    --green:#3dfa9c; --green-dim:#1d7a4c; --cyan:#37e6e6;
+    --teal:#158158; --blue:#058DC7; --amber:#f5c451; --red:#ff5f56;
+    --text:#b9f5d6; --muted:#4a6b60;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
     font-family:"Courier New",Courier,monospace;font-size:15px;line-height:1.5;
     -webkit-user-select:none;-moz-user-select:none;user-select:none}
   input,textarea,select{-webkit-user-select:text;user-select:text}
+  /* scanline overlay */
   .scan{position:fixed;inset:0;pointer-events:none;z-index:9999;
-    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.2) 3px,rgba(0,0,0,0) 4px);
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.22) 3px,rgba(0,0,0,0) 4px);
     mix-blend-mode:multiply}
-  .wrap{max-width:1160px;margin:0 auto;padding:14px 16px 40px}
+  .wrap{max-width:1080px;margin:0 auto;padding:14px 16px 40px}
+  /* top bar */
   .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;
-    border:1px solid var(--teal);background:linear-gradient(90deg,#061014,#0a1a1c);
+    border:1px solid var(--teal);background:linear-gradient(90deg,#08120f,#0b1a16);
     border-radius:6px;padding:9px 14px;margin-bottom:10px}
   .topbar .brand{color:var(--green);font-weight:bold;letter-spacing:2px}
   .topbar .sub{color:var(--muted);font-size:12px}
   .topbar .stats{margin-left:auto;font-size:13px;color:var(--cyan)}
   .topbar .stats b{color:var(--green)}
-  .keybar{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:10px 12px;margin-bottom:10px}
-  .keybar h3{margin:0 0 8px;font-size:12px;color:var(--cyan);letter-spacing:1px}
+  /* key bar */
+  .keybar{border:1px solid var(--line);border-radius:6px;background:var(--panel);
+    padding:10px 12px;margin-bottom:10px}
+  .keybar h3{margin:0 0 8px;font-size:12px;color:var(--cyan);letter-spacing:1px;font-weight:bold}
   .keys{display:flex;flex-wrap:wrap;gap:6px}
-  .keyslot{min-width:52px;text-align:center;border:1px dashed var(--line);border-radius:4px;padding:5px 8px;font-size:13px;color:var(--muted)}
+  .keyslot{min-width:60px;text-align:center;border:1px dashed var(--line);border-radius:4px;
+    padding:5px 8px;font-size:13px;color:var(--muted)}
   .keyslot.filled{border:1px solid var(--amber);color:var(--amber);border-style:solid;background:#1a1608}
+  /* address bar */
   .addrrow{display:flex;align-items:center;gap:8px;margin-bottom:12px}
   .addrrow .proto{color:var(--muted);font-size:13px}
-  #addr{flex:1;background:#020609;border:1px solid var(--teal);color:var(--green);padding:9px 12px;border-radius:4px;font-family:inherit;font-size:14px}
-  .btn{background:var(--teal);color:#02110b;border:none;border-radius:4px;padding:9px 15px;font-family:inherit;font-weight:bold;font-size:13px;cursor:pointer;letter-spacing:1px}
+  #addr{flex:1;background:#020504;border:1px solid var(--teal);color:var(--green);
+    padding:9px 12px;border-radius:4px;font-family:inherit;font-size:14px}
+  .btn{background:var(--teal);color:#02110b;border:none;border-radius:4px;padding:9px 16px;
+    font-family:inherit;font-weight:bold;font-size:13px;cursor:pointer;letter-spacing:1px}
   .btn:hover{background:var(--green)}
-  .btn.locked,.btn:disabled{background:#26332f;color:var(--muted);cursor:not-allowed}
+  .btn.locked,.btn:disabled{background:#2a3330;color:var(--muted);cursor:not-allowed}
   .btn.ghost{background:transparent;border:1px solid var(--teal);color:var(--green)}
-  .btn.sm{padding:6px 11px;font-size:12px}
-  .grid{display:grid;grid-template-columns:230px 1fr;gap:12px}
-  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  /* layout */
+  .grid{display:grid;grid-template-columns:250px 1fr;gap:12px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
   .sidebar{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:12px}
-  .sidebar h3{margin:0 0 8px;font-size:12px;color:var(--cyan);letter-spacing:1px;border-bottom:1px solid var(--line);padding-bottom:6px}
-  .wiki a{display:block;color:var(--text);text-decoration:none;padding:5px 4px;font-size:13px;cursor:pointer;border-radius:3px}
-  .wiki a:hover{background:#0d1f1a;color:var(--green)}
-  .wiki a.done{color:var(--dim)}
+  .sidebar h3{margin:0 0 8px;font-size:12px;color:var(--cyan);letter-spacing:1px;
+    border-bottom:1px solid var(--line);padding-bottom:6px}
+  .wiki a{display:block;color:var(--text);text-decoration:none;padding:5px 4px;
+    font-size:13px;cursor:pointer;border-radius:3px}
+  .wiki a:hover{background:#10201b;color:var(--green)}
+  .wiki a.done{color:var(--green-dim)}
   .wiki a.done::before{content:"[\2713] ";color:var(--green)}
   .small{font-size:11px;color:var(--muted);line-height:1.45}
   .reset{margin-top:10px;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline}
-  .screen{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:16px 18px;min-height:520px}
-  .site h1{margin:0 0 4px;font-size:22px;color:var(--cyan);letter-spacing:1px}
-  .url-tag{font-size:11px;color:var(--muted);margin-bottom:12px}
-  .tag{font-size:10px;border:1px solid var(--teal);color:var(--green);border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle}
-  .brief{border-left:3px solid var(--amber);background:#12100a;padding:9px 12px;margin:10px 0 12px;font-size:13.5px;color:#e8d9a8}
-  .mission{border-left:3px solid var(--blue);background:#07131a;padding:9px 12px;margin:10px 0 12px;font-size:13.5px;color:#bfe4f5}
-  /* terminal */
-  .term{background:#010406;border:1px solid var(--line);border-radius:5px;margin:10px 0}
-  .term-bar{display:flex;align-items:center;gap:8px;background:#081218;padding:5px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
-  .term-out{padding:10px 12px;font-size:13px;white-space:pre-wrap;color:var(--green);
-    max-height:340px;overflow-y:auto;line-height:1.5;min-height:120px}
-  .term-in{display:flex;align-items:center;gap:6px;border-top:1px solid var(--line);padding:6px 10px}
-  .term-in span{color:var(--cyan);font-size:13px;white-space:nowrap}
-  .term-in input{flex:1;background:transparent;border:none;outline:none;color:var(--green);font-family:inherit;font-size:13px}
-  .cmdhint{font-size:11px;color:var(--muted);padding:0 12px 8px}
-  .obj{border:1px solid var(--line);border-radius:5px;background:#061013;padding:9px 12px;margin:10px 0;font-size:13px}
-  .obj h4{margin:0 0 6px;font-size:11px;color:var(--cyan);letter-spacing:1px}
-  .obj div{padding:2px 0;color:var(--muted)}
-  .obj div.ok{color:var(--green)}
-  .obj div.ok::before{content:"[\2713] "}
-  .obj div:not(.ok)::before{content:"[ ] "}
-  .q{margin:12px 0 6px;font-size:13.5px;color:#dffaec}
-  .opts label{display:block;border:1px solid var(--line);border-radius:4px;padding:7px 10px;margin:4px 0;cursor:pointer;font-size:13px}
-  .opts label:hover{border-color:var(--teal);background:#0b1a16}
-  .opts input{margin-right:8px}
-  .ansrow{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
-  .ansrow input{flex:1;min-width:180px;background:#020609;border:1px solid var(--teal);color:var(--green);padding:8px 11px;border-radius:4px;font-family:inherit;font-size:13.5px}
-  textarea.rules{width:100%;min-height:120px;background:#010406;border:1px solid var(--teal);color:var(--green);
-    font-family:inherit;font-size:13px;padding:9px 11px;border-radius:4px;line-height:1.55}
+  .screen{border:1px solid var(--line);border-radius:6px;background:var(--panel);
+    padding:18px 20px;min-height:460px}
+  /* site content */
+  .site h1{margin:0 0 4px;font-size:24px;color:var(--cyan);letter-spacing:1px}
+  .url-tag{font-size:11px;color:var(--muted);margin-bottom:14px}
+  .tag{font-size:10px;border:1px solid var(--teal);color:var(--green);border-radius:3px;
+    padding:1px 6px;margin-left:8px;vertical-align:middle}
+  .brief{border-left:3px solid var(--amber);background:#141207;padding:9px 12px;
+    margin:10px 0 14px;font-size:14px;color:#e8d9a8}
+  .evidence{background:#020504;border:1px solid var(--line);border-radius:4px;
+    padding:12px 14px;margin:12px 0;font-size:13px;white-space:pre-wrap;
+    color:var(--green);overflow-x:auto;line-height:1.55}
+  .evidence.bad{border-color:#5a2a2a;color:#ff9d97}
+  .ev-title{font-size:10px;color:var(--cyan);letter-spacing:1px;margin-bottom:6px;display:block}
+  .q{margin:14px 0 6px;font-size:14px;color:#dffaec}
+  .q b{color:var(--cyan)}
+  .opts label{display:block;border:1px solid var(--line);border-radius:4px;padding:8px 11px;
+    margin:5px 0;cursor:pointer;font-size:13.5px}
+  .opts label:hover{border-color:var(--teal);background:#0d1a16}
+  .opts input{margin-right:9px}
+  .ansrow{display:flex;gap:8px;margin:8px 0}
+  .ansrow input{flex:1;background:#020504;border:1px solid var(--teal);color:var(--green);
+    padding:8px 11px;border-radius:4px;font-family:inherit;font-size:14px}
+  select{width:100%;background:#020504;border:1px solid var(--teal);color:var(--green);
+    padding:8px;font-family:inherit;font-size:13.5px;border-radius:4px}
   .hintbtn{color:var(--amber);font-size:12px;cursor:pointer;text-decoration:underline;margin-left:12px}
-  .hint{display:none;border-left:3px solid var(--amber);background:#12100a;color:#e8d9a8;padding:9px 12px;margin:9px 0;font-size:13px}
-  .feedback{margin-top:10px;padding:9px 12px;border-radius:4px;font-size:13.5px;display:none}
-  .feedback.ok{display:block;border:1px solid var(--dim);background:#04150d;color:var(--green)}
+  .hint{display:none;border-left:3px solid var(--amber);background:#141207;color:#e8d9a8;
+    padding:9px 12px;margin:9px 0;font-size:13px}
+  .feedback{margin-top:11px;padding:9px 12px;border-radius:4px;font-size:13.5px;display:none}
+  .feedback.ok{display:block;border:1px solid var(--green-dim);background:#07170f;color:var(--green)}
   .feedback.no{display:block;border:1px solid #5a2a2a;background:#170707;color:#ff9d97}
   .flag{color:var(--amber);font-weight:bold;letter-spacing:2px}
-  .glitch{color:var(--cyan);text-shadow:0 0 6px rgba(63,224,232,.4)}
-  .evi{background:#010406;border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:10px 0;
-    font-size:12.5px;white-space:pre-wrap;color:var(--green);overflow-x:auto;line-height:1.5}
-  .evi b{color:var(--amber)}
+  .glitch{color:var(--cyan);text-shadow:0 0 6px rgba(55,230,230,.45)}
+  .link{color:var(--blue);cursor:pointer;text-decoration:underline}
   .win pre{color:var(--green);font-size:12px;line-height:1.3;overflow-x:auto}
   .hl{color:var(--amber)}
-  table.net{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0}
-  table.net th,table.net td{border:1px solid var(--line);padding:4px 8px;text-align:left;color:var(--text)}
-  table.net th{color:var(--cyan);font-size:11px;letter-spacing:1px}
-  .verdict-ok{color:var(--green);font-weight:bold}
-  .verdict-no{color:var(--red);font-weight:bold}
-  #devShield{position:fixed;inset:0;z-index:100000;background:#04070a;color:var(--green);
+  /* ===== simulated public websites (Stage 2) ===== */
+  .browser{border:1px solid var(--teal);border-radius:6px;overflow:hidden;margin:4px 0}
+  .bchrome{display:flex;align-items:center;gap:6px;background:#0d1a17;padding:6px 10px}
+  .bdot{width:9px;height:9px;border-radius:50%;background:#39524c}
+  .burl{flex:1;background:#0a1210;color:#8fdcc0;border:1px solid #1c3a33;border-radius:12px;
+    padding:4px 12px;font-size:12px;word-break:break-all}
+  .burl .lock{color:var(--green)}
+  .page{background:#fff;color:#1f2d3a;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55}
+  .ph{padding:12px 16px;display:flex;align-items:center;gap:12px;color:#fff}
+  .ph .crest{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-weight:bold;font-size:15px;flex:0 0 auto;background:rgba(255,255,255,.9)}
+  .ph h2{margin:0;font-size:17px;color:#fff}
+  .ph .tagline{font-size:11px;opacity:.85}
+  .pnav{display:flex;flex-wrap:wrap;padding:0 8px}
+  .pnav a{color:#fff;opacity:.9;text-decoration:none;padding:8px 10px;font-size:13px;cursor:pointer}
+  .pnav a:hover,.pnav a.active{background:rgba(255,255,255,.18);opacity:1;font-weight:bold}
+  .pbody{padding:16px 18px}
+  .pbody h3{margin:0 0 8px}
+  .pbody a{cursor:pointer;text-decoration:underline}
+  .pbody ul{margin:6px 0 6px 18px}
+  .qlinks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .qlinks a{border:1px solid #cdd8e6;border-radius:6px;padding:8px 12px;text-decoration:none;font-size:13px}
+  .card2{border:1px solid #e0e6ee;border-radius:6px;padding:10px 12px;margin-bottom:8px}
+  .card2 h4{margin:0 0 4px}
+  .pfoot{padding:10px 16px;font-size:12px;color:#e8eef6}
+  .pfoot a{color:#fff;cursor:pointer;text-decoration:underline}
+  .ptable{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+  .ptable th,.ptable td{border:1px solid #dde3ea;padding:6px 8px;text-align:left}
+  .note{display:inline-block;background:#fff6a8;color:#4a3d00;padding:8px 10px;
+    border:1px solid #e6d24a;box-shadow:2px 2px 4px rgba(0,0,0,.15);font-size:12px;
+    cursor:pointer;transform:rotate(-1.5deg);line-height:1.45}
+  .filelink{cursor:pointer;text-decoration:underline}
+  .sitesel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .sitesel a{font-size:12px;border:1px solid var(--line);border-radius:4px;padding:5px 9px;
+    cursor:pointer;color:var(--text);text-decoration:none}
+  .sitesel a:hover{border-color:var(--teal);color:var(--green)}
+  .sitesel a.on{border-color:var(--amber);color:var(--amber)}
+  .plan{background:#f4f7fa;border:1px solid #dde3ea;padding:8px;border-radius:4px}
+  .plan text{font-family:Arial,Helvetica,sans-serif;font-size:9px;fill:#2b3a4a}
+  .plan .rm{fill:#e9eff5;stroke:#9fb3c6;stroke-width:1}
+  .plan .hot{fill:#e6eef5;stroke:#8aa2b8;stroke-width:1;cursor:pointer}
+  .plan .hot:hover{fill:#ffe9a8;stroke:#c9a227}
+  .plan .door{stroke:#3d7a52;stroke-width:3}
+  .plan .cam{fill:#2f6d4f}
+  .legend{font-size:11px;color:#4a5b6b;margin-top:6px}
+  #devShield{position:fixed;inset:0;z-index:100000;background:#050807;color:#3dfa9c;
     display:none;align-items:center;justify-content:center;text-align:center;padding:40px;font-size:16px}
 </style>
 </head>
 <body>
 <div class="scan"></div>
 <div class="wrap">
+
   <div class="topbar">
     <span class="brand">A.N.N.</span>
-    <span class="sub">// Anonymous Node Network &nbsp;·&nbsp; WIRETAP &nbsp;·&nbsp; NETWORK DEFENSE RANGE v3.0</span>
-    <span class="stats">KEYS: <b id="flagCount">0</b> / 7 &nbsp;·&nbsp; ANALYST XP: <b id="xp">0</b></span>
+    <span class="sub">// Anonymous Node Network &nbsp;·&nbsp; SOC TRAINING SIM v2.0 &nbsp;·&nbsp; VAULTRUN</span>
+    <span class="stats">FRAGMENTS: <b id="flagCount">0</b> / 8 &nbsp;·&nbsp; ANALYST XP: <b id="xp">0</b></span>
   </div>
+
   <div class="keybar">
-    <h3>&#9656; ACCESS KEY RECONSTRUCTION: complete all 7 range exercises</h3>
+    <h3>&#9656; VAULT PASSPHRASE RECONSTRUCTION: recover all 8 fragments to open the outer door</h3>
     <div class="keys" id="keys"></div>
   </div>
+
   <div class="addrrow">
     <span class="proto">node://</span>
     <input id="addr" spellcheck="false" autocomplete="off" value="home">
     <button class="btn" onclick="connect()">CONNECT</button>
   </div>
+
   <div class="grid">
     <div class="sidebar">
       <h3>&#9656; DEEP WIKI I</h3>
       <div class="wiki" id="wiki"></div>
       <div id="wiki2wrap" style="display:none;margin-top:14px">
-        <h3 style="color:var(--amber)">&#9656; DEEP WIKI II <span style="font-size:10px">[live]</span></h3>
+        <h3 style="color:var(--amber)">&#9656; DEEP WIKI II <span style="font-size:10px">[decrypted]</span></h3>
         <div class="wiki" id="wiki2"></div>
       </div>
-      <div class="small" style="margin-top:14px">A.N.N. is a <b>simulated range</b>. Every device, address, and log here is fictional. The commands are real; the network is not.</div>
+      <div class="small" style="margin-top:14px">A.N.N. is a <b>training sandbox</b>. No real systems, no real organizations. Every site here is fictional and built from AP Cybersecurity Unit 2.</div>
       <div class="reset" onclick="wipeProgress()">wipe progress</div>
     </div>
     <div class="screen" id="screen"></div>
   </div>
+
   <div class="small" style="text-align:center;margin-top:14px">
-    A.N.N. WIRETAP &nbsp;·&nbsp; Unit 3: Securing Networks &nbsp;·&nbsp; Type <b>help</b> in any terminal to list available commands.
+    A.N.N. VaultRun &nbsp;·&nbsp; Classroom CTF &nbsp;·&nbsp; Unit 2: Securing Spaces &nbsp;·&nbsp; Ask your SOC lead (Mr. S) if a node won't resolve.
   </div>
 </div>
 
 <script>
-/* ==================== STATE ==================== */
-function save(){ try{ localStorage.setItem('annwiretap', JSON.stringify(state)); }catch(e){} }
-function load(){ try{ return JSON.parse(localStorage.getItem('annwiretap')); }catch(e){ return null; } }
-let state = load() || { flags:{}, xp:0, lock:{}, obj:{}, stage2:false, phase:{} };
-state.lock=state.lock||{}; state.obj=state.obj||{}; state.phase=state.phase||{};
-function wipeProgress(){ if(confirm("Wipe all keys, objectives, and XP?")){ state={flags:{},xp:0,lock:{},obj:{},stage2:false,phase:{}}; save(); SIMSTATE={}; route('home'); renderAll(); } }
+/* ============ STATE ============ */
+function save(){ try{ localStorage.setItem('annvault', JSON.stringify(state)); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem('annvault')); }catch(e){ return null; } }
+let state = load() || { flags:{}, xp:0, lock:{}, stage2:false, webflags:{} };
+state.lock = state.lock || {};
+state.webflags = state.webflags || {};
+function wipeProgress(){ if(confirm("Wipe all fragments and XP?")){ state={flags:{},xp:0,lock:{},stage2:false,webflags:{}}; save(); route('home'); renderAll(); } }
 
-const MISSION=['arp.recon','cam.table','wifi.audit','segment.map','acl.forge','fw.place','log.hunt'];
-const FRAG={'arp.recon':'FI','cam.table':'RST','wifi.audit':'MAT','segment.map':'CH','acl.forge':'WI','fw.place':'N','log.hunt':'S'};
-const FINAL_ANSWER="FIRSTMATCHWINS";
-const PHASES=['p1','p2','p3','p4','p5'];
-const PFRAG={p1:'CON',p2:'TAIN',p3:'THE',p4:'BRE',p5:'ACH'};
-const WEB_ANSWER="CONTAINTHEBREACH";
-
-/* ==================== HELPERS ==================== */
-function val(id){const e=document.getElementById(id);return e?e.value:'';}
-function norm(s){return (s||'').trim().toLowerCase().replace(/\s+/g,' ');}
-function radio(n){const e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:null;}
-function tog(id){const e=document.getElementById(id);if(e)e.style.display=e.style.display==='block'?'none':'block';}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function showFB(id,ok,msg){const e=document.getElementById(id);if(!e)return;e.className='feedback '+(ok?'ok':'no');e.innerHTML=msg;}
-function deadPage(m){return '<div class="site"><h1 class="glitch">// NODE UNREACHABLE</h1><div class="evi">'+m+'</div><div class="small">Not every address in Deep Wiki I is a live exercise.</div></div>';}
-
-/* IP / CIDR math */
-function ipToInt(ip){const p=ip.split('.').map(Number);if(p.length!==4||p.some(n=>isNaN(n)||n<0||n>255))return null;return ((p[0]<<24)>>>0)+(p[1]<<16)+(p[2]<<8)+p[3];}
-function cidrMatch(ip,cidr){
-  if(!cidr||cidr==='any'||cidr==='all')return true;
-  if(cidr.indexOf('/')<0)return ip===cidr;
-  const [base,bitsRaw]=cidr.split('/'); const bits=parseInt(bitsRaw,10);
-  const a=ipToInt(ip), b=ipToInt(base);
-  if(a===null||b===null||isNaN(bits))return false;
-  if(bits===0)return true;
-  const mask=(0xFFFFFFFF<<(32-bits))>>>0;
-  return ((a&mask)>>>0)===((b&mask)>>>0);
+/* ============ HELPERS ============ */
+function val(id){ const e=document.getElementById(id); return e?e.value:''; }
+function norm(s){ return (s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function radio(name){ const e=document.querySelector(`input[name="${name}"]:checked`); return e?e.value:null; }
+function tog(id){ const e=document.getElementById(id); if(e) e.style.display = e.style.display==='block'?'none':'block'; }
+function selRow(id,label,opts){
+  return `<div class="q" style="margin:10px 0 3px">${label}</div>
+    <select id="${id}"><option value="">-- choose --</option>${opts.map(o=>`<option value="${o}">${o}</option>`).join('')}</select>`;
+}
+function deadPage(msg){
+  return `<div class="site"><h1 class="glitch">// NODE UNREACHABLE</h1>
+    <div class="evidence bad">${msg}</div>
+    <div class="small">Not every address in Deep Wiki I holds a fragment. Try another node.</div></div>`;
+}
+function showFB(id, ok, msg){
+  const e=document.getElementById(id); if(!e) return;
+  e.className = 'feedback ' + (ok?'ok':'no');
+  e.innerHTML = msg;
 }
 
-/* ==================== PER-NODE SIM STATE ==================== */
-let SIMSTATE={};
-function sim(k){ if(!SIMSTATE[k]) SIMSTATE[k]=JSON.parse(JSON.stringify(SIM_INIT[k]||{})); return SIMSTATE[k]; }
+/* ============ MISSION ORDER / FRAGMENTS ============ */
+const MISSION = ['pretext.desk','actor.profile','chain.trace','risk.ledger','control.grid','breach.desk','harden.plan','watch.post'];
+const FRAG = { 'pretext.desk':'PHY','actor.profile':'SIC','chain.trace':'AL','risk.ledger':'ACC',
+               'control.grid':'ESS','breach.desk':'WI','harden.plan':'NS','watch.post':'ALL' };
+const FINAL_ANSWER = "PHYSICALACCESSWINSALL";
+const HINT_ID = { 'pretext.desk':'h1','actor.profile':'h2','chain.trace':'h3','risk.ledger':'h4',
+                  'control.grid':'h5','breach.desk':'h6','harden.plan':'h7','watch.post':'h8' };
+const FB_ID = { 'pretext.desk':'fb_pretext','actor.profile':'fb_actor','chain.trace':'fb_chain','risk.ledger':'fb_risk',
+                'control.grid':'fb_control','breach.desk':'fb_breach','harden.plan':'fb_harden','watch.post':'fb_watch' };
 
-const SIM_INIT={
-  'arp.recon':{ mode:'host' },
-  'cam.table':{ mode:'user', portsec:{}, },
-  'wifi.audit':{ cfg:{encryption:'wep', wps:'on', beacon:'on', power:'max', auth:'psk'} },
-  'segment.map':{ vlans:{}, assign:{} },
-  'acl.forge':{ tested:false },
-  'fw.place':{ fws:{} },
-  'log.hunt':{ }
+/* ============ NODES ============ */
+const NODES = {
+  home:{ hidden:true, render(){ return `
+    <div class="site">
+      <h1 class="glitch">// A.N.N. VAULTRUN: BOOT</h1>
+      <div class="url-tag">node://home</div>
+      <div class="evidence">A.N.N. SOC TRAINING SIM v2.0 ... ONLINE
+UNIT 2 MODULE: SECURING SPACES ......... LOADED
+
+MISSION: Eight compromised nodes are scattered across A.N.N.
+Each node holds one fragment of the vault passphrase.
+
+STAGE 1: Work every node in DEEP WIKI I. Analyze the evidence,
+          answer correctly, decrypt the fragment.
+          Careful: some addresses in the index are dead ends.
+          A wrong answer locks that node for 20 seconds.
+
+STAGE 2: Assemble all 8 fragments to open the outer door.
+          Behind it: three public websites belonging to fictional
+          organizations. You will audit them for physical-security
+          failures and recover the final command.
+
+RULES OF ENGAGEMENT: observe and reason. This is a paper exercise.
+You are an analyst, not an intruder.</div>
+      <div class="brief"><b>Begin:</b> open the first node from Deep Wiki I, or type an address above and hit CONNECT.</div>
+    </div>`; } },
+
+  /* ---------- 1 · SOCIAL ENGINEERING (2.1.A) ---------- */
+  "pretext.desk":{ label:"pretext.desk", render(){ return `
+    <div class="site">
+      <h1>PRETEXT DESK <span class="tag">2.1.A</span></h1>
+      <div class="url-tag">node://pretext.desk/intercept/voicemail-4417</div>
+      <div class="brief"><b>BRIEF:</b> A voicemail was left on the main line of a research lab. The caller invented a false company and role, then stacked several social engineering tactics on top of it. Match each quoted line to the tactic it uses.</div>
+      <div class="evidence"><span class="ev-title">TRANSCRIPT, VANTOR LABS MAIN LINE, 4:52 PM FRIDAY</span>"Hi, this is Dale from Meridian Fire Systems, your approved fire-safety
+vendor. I am parked out front for the annual inspection.
+
+Your director, Ms. Alvarez, signed off on this and told me to have you
+let me in when I called.
+
+The county only lets us inspect until 5:00 PM today. If we miss that
+window, the fine gets written to your lab, not to us.
+
+Both of your other campuses already passed me through this morning, so
+you are the only site left on my list."</div>
+
+      <div class="q">Q1. "Your director, Ms. Alvarez, signed off on this and told me to have you let me in." The caller is relaying an instruction from someone with power. Which tactic is that?</div>
+      <div class="opts">
+        <label><input type="radio" name="p1" value="a"> Scarcity</label>
+        <label><input type="radio" name="p1" value="b"> Consensus</label>
+        <label><input type="radio" name="p1" value="c"> Authority</label>
+        <label><input type="radio" name="p1" value="d"> Familiarity</label>
+      </div>
+
+      <div class="q">Q2. "The county only lets us inspect until 5:00 PM today. If we miss that window, the fine gets written to your lab." Which tactic is the caller using here?</div>
+      <div class="opts">
+        <label><input type="radio" name="p2" value="a"> Urgency</label>
+        <label><input type="radio" name="p2" value="b"> Familiarity</label>
+        <label><input type="radio" name="p2" value="c"> Authority</label>
+        <label><input type="radio" name="p2" value="d"> Consensus</label>
+      </div>
+
+      <div class="q">Q3. "Both of your other campuses already passed me through this morning." Which tactic does that line rely on?</div>
+      <div class="opts">
+        <label><input type="radio" name="p3" value="a"> Scarcity</label>
+        <label><input type="radio" name="p3" value="b"> Intimidation</label>
+        <label><input type="radio" name="p3" value="c"> Consensus</label>
+        <label><input type="radio" name="p3" value="d"> Authority</label>
+      </div>
+
+      <div class="q">Q4. The whole call only works because the caller first invented a believable false identity and reason for contact ("Dale from Meridian Fire Systems, here for the inspection"). What is the name for that foundational technique that the other tactics are layered on top of?</div>
+      <div class="opts">
+        <label><input type="radio" name="p4" value="a"> Pretexting</label>
+        <label><input type="radio" name="p4" value="b"> Shoulder surfing</label>
+        <label><input type="radio" name="p4" value="c"> Tailgating</label>
+        <label><input type="radio" name="p4" value="d"> Dumpster diving</label>
+      </div>
+
+      <button class="btn" id="btn_pretext.desk" onclick="checkPretext()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h1')">need a hint?</span>
+      <div class="hint" id="h1">Take each quoted line on its own. One borrows power from a named person in charge. One presses on a shrinking deadline and a consequence. One leans on the sense that everyone else has already complied. The final question asks for the fabricated backstory that every social engineering call is built on before any pressure tactic is added.</div>
+      <div class="feedback" id="fb_pretext"></div>
+    </div>`; } },
+
+  /* ---------- 2 · ADVERSARY TYPES (2.1.B) ---------- */
+  "actor.profile":{ label:"actor.profile", render(){ return `
+    <div class="site">
+      <h1>ACTOR PROFILING <span class="tag">2.1.B</span></h1>
+      <div class="url-tag">node://actor.profile/queue/unclassified</div>
+      <div class="brief"><b>BRIEF:</b> Three incident briefs are waiting to be classified. Match each to the adversary type that fits, then answer the analyst question.</div>
+      <div class="evidence"><span class="ev-title">INCIDENT BRIEFS</span>BRIEF 1: Malware was planted inside power-grid controllers serving four
+         counties. The attackers left a public message demanding the
+         state reverse an energy policy, intending to disrupt the whole
+         region.
+
+BRIEF 2: A database administrator was fired in March, but her account
+         was never disabled. The next week that same account was used
+         after hours to copy the full customer table and sell it.
+
+BRIEF 3: A cross-border criminal enterprise runs its own help desk and
+         payment-negotiation team. It encrypts hospital networks with
+         ransomware for rapid, large financial gain.</div>
+
+      ${selRow("a1","BRIEF 1 &rarr;",["Script kiddie","Cyberterrorist","Insider adversary","Transnational criminal organization"])}
+      ${selRow("a2","BRIEF 2 &rarr;",["Script kiddie","Cyberterrorist","Insider adversary","Transnational criminal organization"])}
+      ${selRow("a3","BRIEF 3 &rarr;",["Script kiddie","Cyberterrorist","Insider adversary","Transnational criminal organization"])}
+
+      <div class="q">Q. Different adversary types have different motivations, capabilities, and targets. Why does knowing the adversary type actually help a defender?</div>
+      <div class="opts">
+        <label><input type="radio" name="a4" value="a"> It sets how much money the company can recover from insurance</label>
+        <label><input type="radio" name="a4" value="b"> Knowing an adversary's motivation and capability predicts which assets they are likely to target, so a defender can prioritize the right protections</label>
+        <label><input type="radio" name="a4" value="c"> It decides which single control the company must buy</label>
+        <label><input type="radio" name="a4" value="d"> The adversary type has no effect on how a defender should prepare</label>
+      </div>
+
+      <button class="btn" id="btn_actor.profile" onclick="checkActor()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h2')">need a hint?</span>
+      <div class="hint" id="h2">Sort by two things: the scale of the intended harm, and where the access came from. One brief describes someone who already held legitimate access and never had to break in. For the last question, recall why the deck says motivation matters so much: it tells you what an adversary is after.</div>
+      <div class="feedback" id="fb_actor"></div>
+    </div>`; } },
+
+  /* ---------- 3 · PHASES OF A CYBERATTACK (2.1.C) ---------- */
+  "chain.trace":{ label:"chain.trace", render(){ return `
+    <div class="site">
+      <h1>CHAIN TRACE <span class="tag">2.1.C</span></h1>
+      <div class="url-tag">node://chain.trace/case/vantor-0918</div>
+      <div class="brief"><b>BRIEF:</b> Six confirmed events from a single intrusion are listed below out of order. Each event belongs to one phase of a cyberattack. Put them back into the order the phases happen.</div>
+      <div class="evidence"><span class="ev-title">CASE VANTOR-0918, EVENTS (OUT OF ORDER)</span>[A] The attacker copied 6 GB of centrifuge design files out to an
+    outside server (the attacker's real goal).
+[B] Before touching any system, the attacker collected staff names and
+    job titles from a public conference program.
+[C] The attacker set up a hidden scheduled task that reopens a secret
+    connection back to them every time the machine restarts.
+[D] Tuesday's security event log was found completely erased.
+[E] The attacker captured a help-desk password using a fake login page
+    and used it to get their first access inside.
+[F] From that first machine, the attacker reached across the network
+    into the finance subnet.</div>
+
+      <div class="q">Q1. Type the six letters in the order the phases happen, first to last, with no spaces or commas (example format: ABCDEF).</div>
+      <div class="ansrow"><input type="text" id="c1" placeholder="six letters" maxlength="8" spellcheck="false"></div>
+
+      <div class="q">Q2. Which single event is the <b>lateral movement</b> phase, where the attacker expands from the first machine toward higher-value systems?</div>
+      <div class="opts">
+        <label><input type="radio" name="c2" value="a"> [B], collecting staff names beforehand</label>
+        <label><input type="radio" name="c2" value="b"> [F], reaching from the first machine into the finance subnet</label>
+        <label><input type="radio" name="c2" value="c"> [D], erasing the security log</label>
+        <label><input type="radio" name="c2" value="d"> [A], copying the design files out</label>
+      </div>
+
+      <div class="q">Q3. Event [E] is <b>initial access</b> and event [C] is <b>persistence</b>. What does the persistence step [C] give the attacker that initial access [E] does not?</div>
+      <div class="opts">
+        <label><input type="radio" name="c3" value="a"> It steals a second, different password</label>
+        <label><input type="radio" name="c3" value="b"> It erases the evidence that the attacker was ever there</label>
+        <label><input type="radio" name="c3" value="c"> It keeps the attacker's access alive even after a reboot or a password change</label>
+        <label><input type="radio" name="c3" value="d"> It moves the attacker onto a different subnet</label>
+      </div>
+
+      <button class="btn" id="btn_chain.trace" onclick="checkChain()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h3')">need a hint?</span>
+      <div class="hint" id="h3">Ask of each event: could it have happened before the attacker had any access at all (that phase comes first)? Could it only happen once they were already inside? Which event is the cleanup an attacker does last? For Q3, compare what each step is worth to the attacker over time: one gets them in once, the other keeps them in.</div>
+      <div class="feedback" id="fb_chain"></div>
+    </div>`; } },
+
+  /* ---------- 4 · RISK ASSESSMENT & MANAGEMENT (2.1.D-E) ---------- */
+  "risk.ledger":{ label:"risk.ledger", render(){ return `
+    <div class="site">
+      <h1>RISK LEDGER <span class="tag">2.1.D &middot; 2.1.E</span></h1>
+      <div class="url-tag">node://risk.ledger/worksheet/cryo-monitor</div>
+      <div class="brief"><b>BRIEF:</b> A partially completed risk worksheet and two competing control quotes. Finish the math, then make the call.</div>
+      <div class="evidence"><span class="ev-title">VANTOR LABS RISK WORKSHEET (EXTRACT)</span>Asset ................. cryogenic storage monitoring server
+Asset value ........... $150,000
+Exposure factor ....... 60%
+Observed frequency .... once every 3 years
+
+VENDOR QUOTES
+  Control X ..... $12,000 / year ..... reduces IMPACT by 50%
+  Control Y ..... $ 4,000 / year ..... reduces LIKELIHOOD by 25%</div>
+
+      <div class="q">Q1. Compute the annualized loss expectancy for this asset. Enter dollars only, digits with no symbols or commas.</div>
+      <div class="ansrow"><input type="text" id="r1" placeholder="digits only" maxlength="12" spellcheck="false"></div>
+
+      <div class="q">Q2. Both quotes are on the table and the lab can fund exactly one. Which delivers the greater net annual benefit?</div>
+      <div class="opts">
+        <label><input type="radio" name="r2" value="a"> Control X, because halving the impact is the larger reduction</label>
+        <label><input type="radio" name="r2" value="b"> Control Y, because its savings exceed its cost by more than Control X's do</label>
+        <label><input type="radio" name="r2" value="c"> Neither; both cost more per year than they save</label>
+        <label><input type="radio" name="r2" value="d"> They are financially identical, so pick either</label>
+      </div>
+
+      <div class="q">Q3. The lab's board rejects both quotes, records the exposure in the register, signs it, and moves on. Which strategy is that?</div>
+      <div class="opts">
+        <label><input type="radio" name="r3" value="a"> Avoidance</label>
+        <label><input type="radio" name="r3" value="b"> Transfer</label>
+        <label><input type="radio" name="r3" value="c"> Mitigation</label>
+        <label><input type="radio" name="r3" value="d"> Acceptance</label>
+      </div>
+
+      <button class="btn" id="btn_risk.ledger" onclick="checkRisk()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h4')">need a hint?</span>
+      <div class="hint" id="h4">Work the chain one step at a time: what one incident costs, how often it happens, then the yearly figure. For Q2 a control only earns its keep if the money it saves each year beats the money it costs each year, so compute that gap for both quotes and compare the gaps, not the percentages.</div>
+      <div class="feedback" id="fb_risk"></div>
+    </div>`; } },
+
+  /* ---------- 5 · CIA / CONTROLS / DEFENSE IN DEPTH (2.1.F-G) ---------- */
+  "control.grid":{ label:"control.grid", render(){ return `
+    <div class="site">
+      <h1>CONTROL GRID <span class="tag">2.1.F &middot; 2.1.G</span></h1>
+      <div class="url-tag">node://control.grid/inventory/site-a</div>
+      <div class="brief"><b>BRIEF:</b> The deployed control inventory for one site is below. Classify each item the way the deck does, by function (preventive, detective, corrective) or by type (physical, technical, managerial).</div>
+      <div class="evidence"><span class="ev-title">VANTOR LABS SITE A, DEPLOYED CONTROL INVENTORY</span>1 ... Server-cabinet lock, keyed, on all four racks
+2 ... SIEM correlating logs from every host, raises analyst alerts
+3 ... Card reader on the lab door that only lets badged staff in
+4 ... Quarterly access-review policy, signed by department heads
+5 ... Uninterruptible power supply on the cryo monitoring servers</div>
+
+      ${selRow("g1","Item 2 (SIEM), classify by FUNCTION:",["Preventive","Detective","Corrective"])}
+      ${selRow("g2","Item 3 (card reader), classify by FUNCTION:",["Preventive","Detective","Corrective"])}
+      ${selRow("g3","Item 4 (access-review policy), classify by TYPE:",["Physical","Technical","Managerial"])}
+
+      <div class="q">Q1. Item 5 exists so the cryo monitors keep running through a county power failure. Which CIA principle is it primarily protecting?</div>
+      <div class="opts">
+        <label><input type="radio" name="g4" value="a"> Availability</label>
+        <label><input type="radio" name="g4" value="b"> Confidentiality</label>
+        <label><input type="radio" name="g4" value="c"> Integrity</label>
+        <label><input type="radio" name="g4" value="d"> Non-repudiation</label>
+      </div>
+
+      <div class="q">Q2. A consultant says the lab is wasting money because items 1, 2, and 3 all protect the same lab. What is the best rebuttal, based on defense in depth?</div>
+      <div class="opts">
+        <label><input type="radio" name="g5" value="a"> The consultant is right, so keep only the newest control</label>
+        <label><input type="radio" name="g5" value="b"> Overlap is fine only when the controls are the same type</label>
+        <label><input type="radio" name="g5" value="c"> Each control covers a threat the others cannot, and if one is bypassed the others still limit the damage</label>
+        <label><input type="radio" name="g5" value="d"> Auditors require a fixed number of controls per room</label>
+      </div>
+
+      <button class="btn" id="btn_control.grid" onclick="checkControl()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h5')">need a hint?</span>
+      <div class="hint" id="h5">For each item ask what it does the moment something happens: only alert a human (detective), or stop the action before it succeeds (preventive). A card reader refuses entry to anyone without a valid badge. Item 4 is a rule people follow, not a device. For Q2, think about what you gain by stacking different kinds of controls instead of duplicating one.</div>
+      <div class="feedback" id="fb_control"></div>
+    </div>`; } },
+
+  /* ---------- 6 · PHYSICAL ATTACKS (2.2) ---------- */
+  "breach.desk":{ label:"breach.desk", render(){ return `
+    <div class="site">
+      <h1>BREACH DESK <span class="tag">2.2</span></h1>
+      <div class="url-tag">node://breach.desk/log/wednesday</div>
+      <div class="brief"><b>BRIEF:</b> Below is one day of lobby-desk activity. Four separate physical attacks are recorded in it. Identify each one.</div>
+      <div class="evidence"><span class="ev-title">VANTOR LABS, LOBBY DESK LOG, WEDNESDAY</span>09:04  Badge 2210 (Okonjo) was granted entry at Lab-A. The door stayed
+       open 24 seconds (normal is about 7). Camera 2 shows a second
+       person slipping in right behind Okonjo, who never turns around
+       or notices anyone following.
+
+11:22  A visitor in a vendor vest asks the desk to badge him into the
+       Records room, saying he is "here to fix the copier." The desk
+       staff believe him and let him in.
+
+14:50  The alley recycling was found torn open. Printed staff org charts
+       and an expired access badge were recovered from the pavement. The
+       shredder has been out of service for three weeks.
+
+16:38  Badge 2210 was granted entry at Lab-A at the same moment Okonjo
+       appears on camera inside Lab-C.</div>
+
+      ${selRow("b1","09:04 &rarr;",["Piggybacking","Tailgating","Shoulder surfing","Dumpster diving","Card cloning"])}
+      ${selRow("b2","11:22 &rarr;",["Piggybacking","Tailgating","Shoulder surfing","Dumpster diving","Card cloning"])}
+      ${selRow("b3","14:50 &rarr;",["Piggybacking","Tailgating","Shoulder surfing","Dumpster diving","Card cloning"])}
+      ${selRow("b4","16:38 &rarr;",["Piggybacking","Tailgating","Shoulder surfing","Dumpster diving","Card cloning"])}
+
+      <div class="q">Q1. The 09:04 and 11:22 entries are the two students most often mix up. Which detail in the log decides which is which?</div>
+      <div class="opts">
+        <label><input type="radio" name="b5" value="a"> The door stayed open for 24 seconds</label>
+        <label><input type="radio" name="b5" value="b"> At 09:04 Okonjo never notices the person following, but at 11:22 the desk staff knowingly let the visitor in</label>
+        <label><input type="radio" name="b5" value="c"> The 11:22 visitor is wearing a vest</label>
+        <label><input type="radio" name="b5" value="d"> Both events happened during business hours</label>
+      </div>
+
+      <div class="q">Q2. Why is the 16:38 entry so hard to catch from the access log alone?</div>
+      <div class="opts">
+        <label><input type="radio" name="b6" value="a"> The badge used is real and valid, so only the impossible situation (Okonjo being in Lab-C at the same time) reveals it</label>
+        <label><input type="radio" name="b6" value="b"> Card readers do not record failed attempts</label>
+        <label><input type="radio" name="b6" value="c"> Badge numbers are never written to the log</label>
+        <label><input type="radio" name="b6" value="d"> The logs are only reviewed once a year</label>
+      </div>
+
+      <button class="btn" id="btn_breach.desk" onclick="checkBreach()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h6')">need a hint?</span>
+      <div class="hint" id="h6">For the two entry attacks, the deciding question is whether the authorized employee was aware, not what the intruder was wearing. The deck says that awareness is the one test that separates tailgating from piggybacking. For 16:38, compare where Okonjo actually is against where her badge is being used.</div>
+      <div class="feedback" id="fb_breach"></div>
+    </div>`; } },
+
+  /* ---------- 7 · PROTECTING PHYSICAL SPACES (2.3) ---------- */
+  "harden.plan":{ label:"harden.plan", render(){ return `
+    <div class="site">
+      <h1>HARDENING PLAN REVIEW <span class="tag">2.3</span></h1>
+      <div class="url-tag">node://harden.plan/memo/draft-3</div>
+      <div class="brief"><b>BRIEF:</b> A junior analyst drafted this remediation memo. Every proposal fails to address the problem beside it. Replace each one.</div>
+      <div class="evidence"><span class="ev-title">VANTOR LABS REMEDIATION MEMO, DRAFT 3</span>PROBLEM 1  Staff badge in "vendors" who simply ask politely.
+           proposed: install a second card reader on the same door
+
+PROBLEM 2  The lobby workstation's monitor faces the public waiting
+           area and displays shipment manifests.
+           proposed: add an uninterruptible power supply
+
+PROBLEM 3  Visitors plug phones and flash drives into the front-desk PC.
+           proposed: post a sign asking visitors not to
+
+PROBLEM 4  A delivery van could roll straight into the glass entry.
+           proposed: add exterior floodlights</div>
+
+      ${selRow("k1","PROBLEM 1, correct control:",["Access control vestibule","Privacy screen filter","Disable the USB ports","Bollards"])}
+      ${selRow("k2","PROBLEM 2, correct control:",["Access control vestibule","Privacy screen filter","Disable the USB ports","Bollards"])}
+      ${selRow("k3","PROBLEM 3, correct control:",["Access control vestibule","Privacy screen filter","Disable the USB ports","Bollards"])}
+      ${selRow("k4","PROBLEM 4, correct control:",["Access control vestibule","Privacy screen filter","Disable the USB ports","Bollards"])}
+
+      <div class="q">Q1. Explain the flaw in the draft's answer to Problem 1: why can adding another card reader never solve it?</div>
+      <div class="opts">
+        <label><input type="radio" name="k5" value="a"> Two readers on one door cost more than the risk is worth</label>
+        <label><input type="radio" name="k5" value="b"> Card readers fail to log entries, so nothing would be recorded</label>
+        <label><input type="radio" name="k5" value="c"> Readers only work on exterior doors, not interior ones</label>
+        <label><input type="radio" name="k5" value="d"> A reader validates the badge, not the number of bodies; an authorized person can still walk a guest through on a single valid swipe</label>
+      </div>
+
+      <div class="q">Q2. The lab can fund only two of your four corrected controls this quarter. Which set of factors properly drives that decision?</div>
+      <div class="opts">
+        <label><input type="radio" name="k6" value="a"> Vendor reputation, warranty terms, and installation date</label>
+        <label><input type="radio" name="k6" value="b"> Whichever controls the newest employees find easiest to use</label>
+        <label><input type="radio" name="k6" value="c"> Severity of the risk, cost of the mitigation, and ease of implementation</label>
+        <label><input type="radio" name="k6" value="d"> Alphabetical order of the problems as filed</label>
+      </div>
+
+      <button class="btn" id="btn_harden.plan" onclick="checkHarden()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h7')">need a hint?</span>
+      <div class="hint" id="h7">Match each control to the exact mechanism of the threat: a person being escorted in, an unauthorized pair of eyes, a removable device, a moving vehicle. For Q1, ask what a reader actually verifies versus what the attack actually exploits.</div>
+      <div class="feedback" id="fb_harden"></div>
+    </div>`; } },
+
+  /* ---------- 8 · DETECTING PHYSICAL ATTACKS (2.4) ---------- */
+  "watch.post":{ label:"watch.post", render(){ return `
+    <div class="site">
+      <h1>WATCH POST AUDIT <span class="tag">2.4</span></h1>
+      <div class="url-tag">node://watch.post/audit/detection-coverage</div>
+      <div class="brief"><b>BRIEF:</b> The current detection deployment, as found. Every line below contains a placement decision worth questioning.</div>
+      <div class="evidence"><span class="ev-title">VANTOR LABS DETECTION COVERAGE AUDIT</span>CAM 1 ...... main lobby, mounted at 5 ft 2 in beside the entry door,
+             within arm's reach of anyone walking in
+
+CAM 4 ...... 50 m straight service corridor, no branches or alcoves,
+             currently covered by a single fisheye unit at one end
+
+SENSORS .... motion sensors installed in the main lobby and the
+             staff break room. None in the server room or the
+             isotope store, which four people may enter
+
+GUARD ...... one officer walks an identical loop and departs the
+             building at 22:00 sharp every night
+
+DOORS ...... no duration logging enabled on any badge event</div>
+
+      <div class="q">Q1. What is the specific defect in the CAM 1 placement?</div>
+      <div class="opts">
+        <label><input type="radio" name="w1" value="a"> Mounted low enough to be blocked, redirected, or covered before an adversary acts</label>
+        <label><input type="radio" name="w1" value="b"> Lobbies never require camera coverage</label>
+        <label><input type="radio" name="w1" value="c"> It is beside a door rather than centered on the ceiling</label>
+        <label><input type="radio" name="w1" value="d"> Nothing; eye level is the ideal mounting height</label>
+      </div>
+
+      <div class="q">Q2. Which form factor actually suits the CAM 4 corridor?</div>
+      <div class="opts">
+        <label><input type="radio" name="w2" value="a"> Another fisheye, mounted at the midpoint</label>
+        <label><input type="radio" name="w2" value="b"> A bullet camera</label>
+        <label><input type="radio" name="w2" value="c"> A dome camera</label>
+        <label><input type="radio" name="w2" value="d"> A pan-tilt-zoom camera on a preset patrol</label>
+      </div>
+
+      <div class="q">Q3. Judge the sensor deployment as a whole.</div>
+      <div class="opts">
+        <label><input type="radio" name="w3" value="a"> Correct as installed; sensors belong where the most people are</label>
+        <label><input type="radio" name="w3" value="b"> Wrong only because there are too few sensors overall</label>
+        <label><input type="radio" name="w3" value="c"> Correct placement, but they should be swapped for cameras</label>
+        <label><input type="radio" name="w3" value="d"> Backwards: constant legitimate movement will train staff to ignore the alerts, while the two rooms where movement would actually be suspicious are unwatched</label>
+      </div>
+
+      <button class="btn" id="btn_watch.post" onclick="checkWatch()">DECRYPT FRAGMENT</button>
+      <span class="hintbtn" onclick="tog('h8')">need a hint?</span>
+      <div class="hint" id="h8">For each device ask what an adversary could do to it, and whether an alert from it would mean anything. One camera needs to survive contact with an intruder; one needs to see far down a narrow line; the sensors need to fire only when a human being there is itself the anomaly.</div>
+      <div class="feedback" id="fb_watch"></div>
+    </div>`; } },
+
+  /* ---------- DECOYS (mixed into the index, no visual tell) ---------- */
+  "mail.relay":{ decoy:true, label:"mail.relay", render(){ return deadPage("RELAY CLOSED. This node forwards nothing. No fragment here."); } },
+  "crypto.locker":{ decoy:true, label:"crypto.locker", render(){ return deadPage("EMPTY CONTAINER. The locker mounts, but every slot is cleared out."); } },
+  "beacon.dead":{ decoy:true, label:"beacon.dead", render(){ return deadPage("NO CARRIER. The beacon stopped transmitting months ago. Dead end."); } },
+  "archive.stub":{ decoy:true, label:"archive.stub", render(){ return deadPage("STUB ONLY. The index entry exists but the archive body was never uploaded."); } },
 };
 
-/* ==================== OBJECTIVES ==================== */
-const OBJ={
- 'arp.recon':[
-   ['a1','Display the gateway ARP table'],
-   ['a2','Locate the MAC address that appears more than once'],
-   ['a3','Submit the attacker MAC and the spoofed gateway IP'],
- ],
- 'cam.table':[
-   ['c1','Display the switch MAC address table'],
-   ['c2','Identify the flooded interface'],
-   ['c3','Enable port security on that interface with a maximum of 3 or fewer'],
-   ['c4','Verify with show port-security'],
- ],
- 'wifi.audit':[
-   ['w1','Display the access point running configuration'],
-   ['w2','Set encryption to WPA3 (or WPA2 at minimum)'],
-   ['w3','Disable WPS and disable beacon broadcasting'],
-   ['w4','Reduce transmit power and require 802.1X authentication'],
- ],
- 'segment.map':[
-   ['s1','Scan the network to enumerate every host'],
-   ['s2','Prove the network is flat by tracing guest to records'],
-   ['s3','Create at least three VLANs'],
-   ['s4','Isolate the records server and the guest WAP into different VLANs'],
-   ['s5','Re-trace to confirm guest can no longer reach records'],
- ],
- 'acl.forge':[
-   ['f1','Load the requirements with the show req command'],
-   ['f2','Write an access control list in the editor'],
-   ['f3','Run test and pass all six packets'],
- ],
- 'fw.place':[
-   ['p1','Display the topology'],
-   ['p2','Place firewalls on the required boundaries'],
-   ['p3','Run simulate and block every unauthorized path'],
- ],
- 'log.hunt':[
-   ['l1','List the available log files'],
-   ['l2','Count the port-scan denials with grep and wc'],
-   ['l3','Find the ARP anomaly'],
-   ['l4','Submit the attacker IP and the exfiltrated volume'],
- ],
+/* ============ STAGE 2: THREE FICTIONAL PUBLIC WEBSITES ============ */
+const WEB_FRAG = { v1:'SEC', v2:'URE', v3:'EVERY', v4:'LA', v5:'YER' };
+const WEB_ORDER = ['v1','v2','v3','v4','v5'];
+const WEB_ANSWER = 'SECUREEVERYLAYER';
+
+const SITES = {
+  vantor:{ name:"Vantor Research Labs", crest:"VR", crestFg:"#123f5b", color:"#123f5b", nav2:"#0d2f45",
+    domain:"vantorlabs.example", tagline:"Materials science for the next century (fictional)",
+    nav:[["v.home","Home"],["v.about","About"],["v.facilities","Facilities"],["v.directory","Directory"],["v.news","News"],["v.careers","Careers"],["v.sitemap","Sitemap"]] },
+  northgate:{ name:"Northgate Regional Medical", crest:"NG", crestFg:"#0f5b4a", color:"#0f5b4a", nav2:"#0b4438",
+    domain:"northgatemed.example", tagline:"Care for the whole valley (fictional)",
+    nav:[["n.home","Home"],["n.visitors","Visitors"],["n.departments","Departments"],["n.security","Safety & Security"],["n.staff","Our Team"]] },
+  ironvale:{ name:"Ironvale Credit Union", crest:"IC", crestFg:"#5b3a12", color:"#5b3a12", nav2:"#452c0e",
+    domain:"ironvalecu.example", tagline:"Member-owned since 1974 (fictional)",
+    nav:[["i.home","Home"],["i.branches","Branches"],["i.about","About Us"],["i.forms","Forms & Documents"]] },
 };
-function objDone(node,id){ state.obj[node]=state.obj[node]||{}; return !!state.obj[node][id]; }
-function markObj(node,id){
-  state.obj[node]=state.obj[node]||{};
-  if(!state.obj[node][id]){ state.obj[node][id]=true; save(); renderObj(node); }
-}
-function allObj(node){ return (OBJ[node]||[]).every(o=>objDone(node,o[0])); }
-function renderObj(node){
-  const el=document.getElementById('objbox'); if(!el||el.dataset.node!==node) return;
-  el.innerHTML='<h4>&#9656; EXERCISE OBJECTIVES</h4>'+(OBJ[node]||[]).map(o=>
-    '<div class="'+(objDone(node,o[0])?'ok':'')+'">'+esc(o[1])+'</div>').join('');
-}
-function objBox(node){ return '<div class="obj" id="objbox" data-node="'+node+'"></div>'; }
 
-/* ==================== TERMINAL ==================== */
-let TERMBUF={};
-function termHTML(node,prompt,hint){
-  return '<div class="term">'+
-    '<div class="term-bar">A.N.N. RANGE SHELL &nbsp;·&nbsp; '+esc(node)+'</div>'+
-    '<div class="term-out" id="tout"></div>'+
-    '<div class="term-in"><span id="tprompt">'+esc(prompt)+'</span>'+
-    '<input id="tin" spellcheck="false" autocomplete="off" placeholder="type a command, then Enter"></div>'+
-    '</div>'+(hint?'<div class="cmdhint">'+hint+'</div>':'');
-}
-function tprint(txt){
-  const o=document.getElementById('tout'); if(!o) return;
-  o.textContent += txt+"\n"; o.scrollTop=o.scrollHeight;
-  TERMBUF[CURNODE]=o.textContent;
-}
-function setPrompt(p){ const e=document.getElementById('tprompt'); if(e) e.textContent=p; }
-let CURNODE=null;
-function wireTerm(node,handler,banner,prompt){
-  CURNODE=node;
-  const inp=document.getElementById('tin'); const out=document.getElementById('tout');
-  if(!inp||!out) return;
-  out.textContent = TERMBUF[node] || (banner? banner+"\n" : "");
-  out.scrollTop=out.scrollHeight;
-  inp.addEventListener('keydown',e=>{
-    if(e.key!=='Enter') return;
-    const raw=inp.value; inp.value='';
-    tprint(document.getElementById('tprompt').textContent+' '+raw);
-    if(!raw.trim()) return;
-    try{ handler(raw.trim()); }catch(err){ tprint('shell error: '+err.message); }
-  });
-  setTimeout(()=>inp.focus(),60);
-}
+/* --- floor plan SVGs (clickable) --- */
+function vantorPlan(){ return `
+<div class="plan"><svg viewBox="0 0 520 270" width="100%" height="250" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="20" width="504" height="230" fill="none" stroke="#7d94a8" stroke-width="2"/>
+  <text x="14" y="15" fill="#5a6b7a">FRONT OF BUILDING (street side)</text>
+  <text x="14" y="266" fill="#5a6b7a">BACK OF BUILDING (service yard)</text>
+  <!-- top row = front / street side -->
+  <rect class="rm" x="20" y="32" width="150" height="86"/><text x="34" y="54">Main Lobby</text><text x="34" y="68">(reception desk)</text>
+  <rect class="rm" x="180" y="32" width="150" height="86"/><text x="194" y="54">Open Lab A</text>
+  <rect class="rm" x="340" y="32" width="160" height="86"/><text x="354" y="54">Open Lab B</text>
+  <!-- middle row -->
+  <rect class="rm" x="20" y="122" width="150" height="60"/><text x="34" y="146">Records Room</text><text x="34" y="160">(paper files)</text>
+  <rect class="rm" x="180" y="122" width="150" height="60"/><text x="194" y="146">Break Room</text>
+  <rect class="hot" id="fp_server" x="340" y="122" width="160" height="60" onclick="foundVuln('v1')"/><text x="354" y="146" pointer-events="none">Server Room</text><text x="354" y="160" pointer-events="none">file server + racks</text>
+  <!-- bottom row = back / service side: the corridor spans the rear wall and reaches the service door -->
+  <rect class="rm" x="20" y="186" width="480" height="52"/><text x="34" y="208">Rear Service Corridor (runs the length of the back wall, about 45 m, straight)</text><text x="34" y="224" fill="#a03d3d">no camera and no motion sensor anywhere along this corridor</text>
+  <!-- front entry on the TOP (street) wall; service door on the BOTTOM (back) wall -->
+  <line class="door" x1="75" y1="20" x2="115" y2="20"/><text x="120" y="16">front entry (street)</text>
+  <line class="door" x1="400" y1="250" x2="440" y2="250"/><text x="250" y="264">rear service door (back wall, opposite the front entry)</text>
+  <circle class="cam" cx="60" cy="44" r="5"/><text x="70" y="47">CAM 1</text>
+  <circle class="cam" cx="250" cy="44" r="5"/><text x="260" y="47">CAM 2</text>
+</svg>
+<div class="legend">Figure 3: First floor. The front entry is on the street wall (top); the rear service door is on the opposite back wall (bottom), reached only through the unmonitored rear corridor that passes the server room. Red text marks coverage gaps; dots mark installed cameras. Click a room for its equipment sheet.</div></div>`; }
 
-/* ==================== NODE 1: arp.recon ==================== */
-const ARP_TABLE=[
-  ['10.0.20.41','9c:2a:70:14:3b:01','Gi0/2'],
-  ['10.0.20.42','9c:2a:70:14:3b:02','Gi0/3'],
-  ['10.0.30.10','6c:88:14:2e:77:d0','Gi0/7'],
-  ['10.0.20.55','6c:88:14:2e:77:d0','Gi0/7'],
-  ['10.0.20.1','6c:88:14:2e:77:d0','Gi0/7'],
-  ['10.0.20.60','9c:2a:70:14:3b:0c','Gi0/5'],
-];
-function arpHandler(raw){
-  const n='arp.recon'; const a=raw.split(/\s+/); const c=a[0].toLowerCase();
-  if(c==='help'){ tprint("available: help, clear, ip addr, arp -a, ip neigh show, ping <ip>, arp -d <ip>"); return; }
-  if(c==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(raw.toLowerCase()==='ip addr'||c==='ifconfig'){
-    tprint("eth0: inet 10.0.20.41/24  brd 10.0.20.255");
-    tprint("      ether 9c:2a:70:14:3b:01");
-    tprint("      default gateway 10.0.20.1"); return;
-  }
-  if(raw.toLowerCase()==='arp -a'||raw.toLowerCase()==='ip neigh show'||raw.toLowerCase()==='ip neigh'){
-    markObj(n,'a1');
-    tprint("ADDRESS          HWADDRESS            IFACE");
-    ARP_TABLE.forEach(r=>tprint(r[0].padEnd(17)+r[1].padEnd(21)+r[2]));
-    tprint("");
-    tprint("6 entries. NOTE: entries are reported exactly as cached.");
-    markObj(n,'a2');
-    return;
-  }
-  if(c==='ping'){
-    const ip=a[1]||'';
-    if(!ipToInt(ip)){ tprint("ping: usage: ping <ip>"); return; }
-    tprint("PING "+ip+" 56 bytes of data.");
-    tprint("64 bytes from "+ip+": icmp_seq=1 ttl=64 time=0.42 ms");
-    tprint("64 bytes from "+ip+": icmp_seq=2 ttl=64 time=0.39 ms");
-    if(ip==='10.0.20.1'||ip==='10.0.30.10') tprint("(reply observed from hardware address 6c:88:14:2e:77:d0)");
-    return;
-  }
-  if(c==='arp'&&a[1]==='-d'){ tprint("cache entry for "+(a[2]||'?')+" deleted (it will be relearned)"); return; }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-function checkArp(){
-  const n='arp.recon';
-  const mac=norm(val('arp_mac')).replace(/-/g,':');
-  const ip=norm(val('arp_ip'));
-  const ok = mac==='6c:88:14:2e:77:d0' && ip==='10.0.20.1';
-  if(ok){ markObj(n,'a3'); tryAward(n,'fb_arp'); }
-  else failNode(n,'fb_arp','Not correct. Look for the hardware address that is cached for more than one IP address, and remember which of those IP addresses is the default gateway.');
-}
+function ironvalePlan(){ return `
+<div class="plan"><svg viewBox="0 0 520 220" width="100%" height="205" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="504" height="204" fill="none" stroke="#a8927d" stroke-width="2"/>
+  <rect class="rm" x="20" y="20" width="200" height="90"/><text x="34" y="42">Member Lobby</text><text x="34" y="56">4 teller windows</text>
+  <rect class="rm" x="230" y="20" width="130" height="90"/><text x="244" y="42">Offices</text>
+  <rect class="hot" id="fp_vault" x="370" y="20" width="130" height="90" onclick="foundVuln('v5')"/><text x="384" y="42" pointer-events="none">Vault Room</text><text x="384" y="56" pointer-events="none">cash + safe deposit</text>
+  <rect class="rm" x="20" y="120" width="200" height="80"/><text x="34" y="142">Drive-through lane</text>
+  <rect class="rm" x="230" y="120" width="130" height="80"/><text x="244" y="142">Staff break area</text>
+  <rect class="rm" x="370" y="120" width="130" height="80"/><text x="384" y="142">Night deposit</text>
+  <line class="door" x1="100" y1="212" x2="140" y2="212"/><text x="144" y="210">main entrance</text>
+  <text x="384" y="76" fill="#a03d3d">walls: drywall</text>
+  <text x="384" y="90" fill="#a03d3d">alarm panel inside</text>
+</svg>
+<div class="legend">Figure 1: Ironvale main branch, published floor plan (from the 2024 member annual report). Click a room for construction detail.</div></div>`; }
 
-/* ==================== NODE 2: cam.table ==================== */
-function camHandler(raw){
-  const n='cam.table'; const S=sim(n); const a=raw.split(/\s+/); const c=a.map(x=>x.toLowerCase());
-  const line=raw.toLowerCase();
-  if(c[0]==='help'){
-    tprint("user mode : help, clear, enable, show mac address-table, show port-security");
-    tprint("priv mode : configure terminal");
-    tprint("config    : interface <name>, switchport port-security,");
-    tprint("            switchport port-security maximum <n>, end");
-    return;
-  }
-  if(c[0]==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(c[0]==='enable'){ S.mode='priv'; setPrompt('SW3#'); tprint(''); return; }
-  if(line==='configure terminal'||line==='conf t'){
-    if(S.mode==='user'){ tprint("% Invalid input detected. Enter enable first."); return; }
-    S.mode='config'; setPrompt('SW3(config)#'); tprint("Enter configuration commands, one per line."); return;
-  }
-  if(line==='end'||line==='exit'){
-    if(S.mode==='config-if'){ S.mode='config'; setPrompt('SW3(config)#'); return; }
-    if(S.mode==='config'){ S.mode='priv'; setPrompt('SW3#'); return; }
-    return;
-  }
-  if(line==='show mac address-table'||line==='show mac-address-table'){
-    markObj(n,'c1');
-    tprint("          Mac Address Table");
-    tprint("Vlan    Mac Address         Type      Ports");
-    tprint("----    -----------         ----      -----");
-    tprint("  20    9c:2a:70:14:3b:01   DYNAMIC   Gi0/2");
-    tprint("  20    9c:2a:70:14:3b:02   DYNAMIC   Gi0/3");
-    tprint("  20    9c:2a:70:14:3b:0c   DYNAMIC   Gi0/5");
-    tprint("  20    6c:88:14:2e:77:d0   DYNAMIC   Gi0/7");
-    tprint("  20    <1,841 additional distinct addresses>  DYNAMIC   Gi0/7");
-    tprint("");
-    tprint("Total Mac Addresses for this criterion: 1845");
-    tprint("Interface summary:  Gi0/2: 1   Gi0/3: 1   Gi0/5: 1   Gi0/7: 1842");
-    markObj(n,'c2');
-    return;
-  }
-  if(c[0]==='interface'){
-    if(S.mode!=='config'&&S.mode!=='config-if'){ tprint("% Enter configure terminal first."); return; }
-    const iface=(a[1]||'').toLowerCase().replace('gigabitethernet','gi');
-    if(!iface){ tprint("% Incomplete command."); return; }
-    S.iface=iface; S.mode='config-if'; setPrompt('SW3(config-if)#'); return;
-  }
-  if(line.startsWith('switchport port-security')){
-    if(S.mode!=='config-if'){ tprint("% Enter interface configuration mode first."); return; }
-    const m=line.match(/maximum\s+(\d+)/);
-    S.portsec[S.iface]=S.portsec[S.iface]||{enabled:false,max:null};
-    if(m){
-      S.portsec[S.iface].max=parseInt(m[1],10);
-      S.portsec[S.iface].enabled=true;
-      tprint("% port-security maximum set to "+m[1]+" on "+S.iface);
-    } else {
-      S.portsec[S.iface].enabled=true;
-      tprint("% port-security enabled on "+S.iface);
-    }
-    const ps=S.portsec['gi0/7'];
-    if(ps&&ps.enabled&&ps.max!==null&&ps.max<=3) markObj(n,'c3');
-    return;
-  }
-  if(line==='show port-security'){
-    tprint("Secure Port  MaxSecureAddr  CurrentAddr  SecurityViolation  Action");
-    const keys=Object.keys(S.portsec);
-    if(!keys.length){ tprint("(no ports configured for port security)"); return; }
-    keys.forEach(k=>{
-      const ps=S.portsec[k];
-      tprint("  "+k.padEnd(11)+String(ps.max===null?'-':ps.max).padEnd(15)+
-        (k==='gi0/7'?'3':'1').padEnd(13)+(k==='gi0/7'&&ps.max!==null&&ps.max<=3?'1842':'0').padEnd(19)+'Restrict');
-    });
-    const ps=S.portsec['gi0/7'];
-    if(ps&&ps.enabled&&ps.max!==null&&ps.max<=3){
-      tprint("");
-      tprint("Gi0/7: flood contained. 1,842 excess addresses rejected.");
-      markObj(n,'c4');
-    }
-    return;
-  }
-  tprint("% Unknown command: "+raw+"   (try: help)");
-}
-function checkCam(){
-  const n='cam.table';
-  if(objDone(n,'c3')&&objDone(n,'c4')) tryAward(n,'fb_cam');
-  else failNode(n,'fb_cam','The interface is not secured yet. Enable port security on the flooded interface with a maximum of 3 or fewer addresses, then verify with show port-security.');
-}
+const PAGES = {
+  /* ---------- VANTOR ---------- */
+  "v.home":{site:"vantor",path:"/", body:`
+    <h3>Vantor Research Labs</h3>
+    <p>Vantor is an independent materials-science laboratory. Our Meridian wing opened this year and houses our centrifuge and cryogenic programs.</p>
+    <div class="qlinks">
+      <a onclick="route('v.facilities')">Facilities &amp; Floor Plans</a>
+      <a onclick="route('v.directory')">Staff Directory</a>
+      <a onclick="route('v.careers')">Careers</a>
+      <a onclick="route('v.news')">Newsroom</a>
+    </div>
+    <div class="card2"><h4><a onclick="route('v.news')">Meridian wing now fully occupied</a></h4><p>All four research groups have completed their move into the new wing.</p></div>
+    <div class="card2"><h4><a onclick="route('v.careers')">We are hiring two lab technicians</a></h4><p>See our careers page for the new-hire handbook and orientation details.</p></div>`},
+  "v.about":{site:"vantor",path:"/about", body:`
+    <h3>About Vantor</h3>
+    <p>Founded in 1998, Vantor employs 140 researchers and technicians across two buildings. We publish openly and welcome academic partnerships.</p>
+    <p>Leadership: Dr. A. Reyes (Director), M. Osei (Operations), T. Bianchi (Facilities &amp; Safety).</p>
+    <p>See also: <a onclick="route('v.facilities')">Facilities</a> &middot; <a onclick="route('v.directory')">Directory</a></p>`},
+  "v.facilities":{site:"vantor",path:"/facilities", body:`
+    <h3>Facilities &amp; Floor Plans</h3>
+    <p>We publish our building layouts for the benefit of visiting researchers, delivery partners, and prospective collaborators.</p>
+    ${vantorPlan()}
+    <p style="margin-top:10px">Questions about access or deliveries? Contact Facilities through the <a onclick="route('v.directory')">directory</a>.</p>`},
+  "v.directory":{site:"vantor",path:"/directory", body:`
+    <h3>Staff Directory</h3>
+    <table class="ptable">
+      <tr><th>Name</th><th>Role</th><th>Extension</th></tr>
+      <tr><td>Dr. A. Reyes</td><td>Director</td><td>x2001</td></tr>
+      <tr><td>M. Osei</td><td>Operations Manager</td><td>x2014</td></tr>
+      <tr><td>L. Okonjo</td><td>Senior Researcher</td><td>x2210</td></tr>
+      <tr><td>T. Bianchi</td><td>Facilities &amp; Safety</td><td>x2099</td></tr>
+    </table>
+    <p style="margin-top:14px">Photo from our Facilities team page, T. Bianchi at the operations desk:</p>
+    <span class="note" onclick="foundVuln('v2')">SERVER ROOM door code 4-4-7-1<br>(taped here so the night<br>cleaners can get in)</span>
+    <p style="margin-top:14px;font-size:12px;color:#5a6b7a">Caption: our operations desk, photographed for the 2024 annual report.</p>`},
+  "v.news":{site:"vantor",path:"/news", body:`
+    <h3>Newsroom</h3>
+    <div class="card2"><h4>Meridian wing now fully occupied</h4><p>All four research groups completed the move ahead of schedule. The rear service corridor remains the primary route for equipment deliveries.</p></div>
+    <div class="card2"><h4>Vantor joins regional materials consortium</h4><p>Our director will present at the consortium's autumn meeting.</p></div>
+    <div class="card2"><h4>Cryogenic program expands</h4><p>Two additional monitoring servers were commissioned this quarter.</p></div>
+    <p><a onclick="route('v.home')">&lsaquo; back home</a></p>`},
+  "v.careers":{site:"vantor",path:"/careers", body:`
+    <h3>Careers at Vantor</h3>
+    <p>We are hiring two lab technicians. Below is an excerpt from the new-hire handbook so applicants know what to expect.</p>
+    <div class="card2"><h4>New-hire handbook excerpt: "Being a good colleague"</h4>
+      <ul>
+        <li>Greet everyone. We are a friendly building.</li>
+        <li class="filelink" onclick="foundVuln('v3')">If someone is in a vendor vest or carrying equipment, hold the door for them, and do not make contractors wait at reception for a badge.</li>
+        <li>Keep the break room tidy.</li>
+        <li>Report broken equipment to Facilities at x2099.</li>
+      </ul></div>
+    <p>Apply through the <a onclick="route('v.sitemap')">documents index</a>.</p>`},
+  "v.sitemap":{site:"vantor",path:"/sitemap", body:`
+    <h3>Site Index</h3>
+    <p><b>Pages:</b>
+      <a onclick="route('v.home')">Home</a> &middot; <a onclick="route('v.about')">About</a> &middot;
+      <a onclick="route('v.facilities')">Facilities</a> &middot; <a onclick="route('v.directory')">Directory</a> &middot;
+      <a onclick="route('v.news')">News</a> &middot; <a onclick="route('v.careers')">Careers</a></p>
+    <p><b>Public documents:</b><br>
+      <a class="filelink" onclick="route('v.facilities')">meridian_floorplan_fig3.pdf</a> &middot;
+      <a class="filelink" onclick="route('v.sitemap')">consortium_abstract.pdf</a> &middot;
+      <a class="filelink" onclick="route('v.sitemap')">annual_report_2024.pdf</a></p>`},
 
-/* ==================== NODE 3: wifi.audit ==================== */
-function wifiHandler(raw){
-  const n='wifi.audit'; const S=sim(n); const line=raw.toLowerCase(); const a=raw.split(/\s+/);
-  if(a[0].toLowerCase()==='help'){
-    tprint("help, clear, show running-config,");
-    tprint("set encryption <wep|wpa|wpa2|wpa3>, set wps <on|off>,");
-    tprint("set beacon <on|off>, set power <max|medium|low>, set auth <psk|8021x>");
-    return;
-  }
-  if(line==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(line==='show running-config'||line==='show run'){
-    markObj(n,'w1');
-    tprint("! WAP-LOBBY running configuration");
-    tprint(" ssid           CALDER-GUEST");
-    tprint(" encryption     "+S.cfg.encryption.toUpperCase());
-    tprint(" wps            "+S.cfg.wps);
-    tprint(" beacon-broadcast "+S.cfg.beacon);
-    tprint(" transmit-power "+S.cfg.power);
-    tprint(" authentication "+(S.cfg.auth==='8021x'?'802.1X (EAP to RADIUS)':'pre-shared key'));
-    tprint("!");
-    const c=S.cfg;
-    if(c.encryption==='wpa3'||c.encryption==='wpa2') markObj(n,'w2');
-    if(c.wps==='off'&&c.beacon==='off') markObj(n,'w3');
-    if(c.power!=='max'&&c.auth==='8021x') markObj(n,'w4');
-    return;
-  }
-  if(a[0].toLowerCase()==='set'){
-    const k=(a[1]||'').toLowerCase(); const v=(a[2]||'').toLowerCase();
-    if(k==='encryption'){
-      if(!['wep','wpa','wpa2','wpa3'].includes(v)){ tprint("% valid: wep, wpa, wpa2, wpa3"); return; }
-      S.cfg.encryption=v; tprint("encryption set to "+v.toUpperCase());
-      if(v==='wep'||v==='wpa') tprint("WARNING: this protocol has known vulnerabilities and is considered insecure.");
-      if(v==='wpa2'||v==='wpa3') markObj(n,'w2');
-      return;
-    }
-    if(k==='wps'){ if(!['on','off'].includes(v)){tprint("% valid: on, off");return;} S.cfg.wps=v; tprint("wps "+v); if(S.cfg.wps==='off'&&S.cfg.beacon==='off')markObj(n,'w3'); return; }
-    if(k==='beacon'){ if(!['on','off'].includes(v)){tprint("% valid: on, off");return;} S.cfg.beacon=v; tprint("beacon-broadcast "+v);
-      if(v==='off') tprint("note: hiding the SSID raises the effort required to find the network but is not encryption.");
-      if(S.cfg.wps==='off'&&S.cfg.beacon==='off')markObj(n,'w3'); return; }
-    if(k==='power'){ if(!['max','medium','low'].includes(v)){tprint("% valid: max, medium, low");return;} S.cfg.power=v; tprint("transmit-power "+v);
-      if(S.cfg.power!=='max'&&S.cfg.auth==='8021x')markObj(n,'w4'); return; }
-    if(k==='auth'){ if(!['psk','8021x'].includes(v)){tprint("% valid: psk, 8021x");return;} S.cfg.auth=v; tprint("authentication "+v);
-      if(S.cfg.power!=='max'&&S.cfg.auth==='8021x')markObj(n,'w4'); return; }
-    tprint("% unknown setting: "+k); return;
-  }
-  tprint("% Unknown command: "+raw+"   (try: help)");
-}
-function checkWifi(){
-  const n='wifi.audit'; const c=sim(n).cfg;
-  const hardened=(c.encryption==='wpa3'||c.encryption==='wpa2')&&c.wps==='off'&&c.beacon==='off'&&c.power!=='max'&&c.auth==='8021x';
-  const mcqOk = radio('wq1')==='b';
-  if(hardened&&mcqOk){ ['w1','w2','w3','w4'].forEach(o=>markObj(n,o)); tryAward(n,'fb_wifi'); }
-  else if(!hardened) failNode(n,'fb_wifi','The access point is not fully hardened yet. Run show running-config and check every line against the wireless policy.');
-  else failNode(n,'fb_wifi','The configuration is correct, but reconsider the question about what hiding the SSID actually accomplishes.');
-}
+  /* ---------- NORTHGATE ---------- */
+  "n.home":{site:"northgate",path:"/", body:`
+    <h3>Northgate Regional Medical</h3>
+    <p>A 210-bed community hospital serving the valley. Our new patient tower opened in March.</p>
+    <div class="qlinks">
+      <a onclick="route('n.visitors')">Visitor Information</a>
+      <a onclick="route('n.departments')">Departments</a>
+      <a onclick="route('n.security')">Safety &amp; Security</a>
+      <a onclick="route('n.staff')">Our Team</a>
+    </div>
+    <div class="card2"><h4>Visiting hours have changed</h4><p>See visitor information for current hours and the badge policy for guests.</p></div>`},
+  "n.visitors":{site:"northgate",path:"/visitors", body:`
+    <h3>Visitor Information</h3>
+    <p>All visitors check in at the main desk and receive a dated guest badge. Please wear it visibly for the duration of your visit.</p>
+    <ul><li>Visiting hours: 10:00 to 20:00</li><li>Two visitors per patient</li><li>Guest badges must be returned on exit</li></ul>
+    <p>Directions and parking: see <a onclick="route('n.departments')">departments</a> for building wings.</p>`},
+  "n.departments":{site:"northgate",path:"/departments", body:`
+    <h3>Departments</h3>
+    <ul><li>Emergency</li><li>Imaging</li><li>Cardiology</li><li>Laboratory</li><li>Pharmacy</li><li>Records</li></ul>
+    <p>Each wing is badge-restricted beyond the public waiting areas.</p>`},
+  "n.security":{site:"northgate",path:"/safety-security", body:`
+    <h3>Safety &amp; Security</h3>
+    <p>Patient and staff safety is our first priority. Our program includes:</p>
+    <ul>
+      <li>24-hour security officers stationed at the main entrance</li>
+      <li>Camera coverage at every entrance and exit</li>
+      <li>Badge access on all clinical wings</li>
+      <li class="filelink" onclick="foundVuln('v4')">Motion sensors in every public lobby, waiting room, and main corridor, over 60 installed hospital-wide</li>
+      <li>Annual staff security awareness training</li>
+    </ul>
+    <p>Report a concern to the security desk at extension 4000.</p>`},
+  "n.staff":{site:"northgate",path:"/our-team", body:`
+    <h3>Our Team</h3>
+    <table class="ptable">
+      <tr><th>Name</th><th>Role</th></tr>
+      <tr><td>Dr. P. Anand</td><td>Chief of Medicine</td></tr>
+      <tr><td>R. Delgado</td><td>Director of Nursing</td></tr>
+      <tr><td>S. Whitfield</td><td>Security Manager</td></tr>
+    </table>
+    <p><a onclick="route('n.home')">&lsaquo; back home</a></p>`},
 
-/* ==================== NODE 4: segment.map ==================== */
-const HOSTS=[
-  ['10.0.20.5','appointment web server','web'],
-  ['10.0.20.10','patient records file server','records'],
-  ['10.0.20.41','staff workstation','staff'],
-  ['10.0.20.42','staff workstation','staff'],
-  ['10.0.20.100','guest wireless access point','guest'],
-  ['10.0.20.121','MRI imaging controller','imaging'],
-];
-function segHandler(raw){
-  const n='segment.map'; const S=sim(n); const a=raw.split(/\s+/); const c=a[0].toLowerCase(); const line=raw.toLowerCase();
-  if(c==='help'){
-    tprint("help, clear, scan <cidr>, traceroute <src> <dst>,");
-    tprint("vlan create <id> <name>, vlan assign <ip> <id>, show vlan");
-    return;
-  }
-  if(c==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(c==='scan'){
-    const cidr=a[1]||'';
-    if(!cidr){ tprint("scan: usage: scan <cidr>   e.g. scan 10.0.20.0/24"); return; }
-    tprint("scanning "+cidr+" ...");
-    let found=0;
-    HOSTS.forEach(h=>{ if(cidrMatch(h[0],cidr)){ tprint("  "+h[0].padEnd(14)+"up   "+h[1]); found++; } });
-    tprint("");
-    tprint(found+" hosts up. All responding hosts share one broadcast domain.");
-    if(found>=6) markObj(n,'s1');
-    return;
-  }
-  if(c==='traceroute'){
-    const src=a[1], dst=a[2];
-    if(!src||!dst){ tprint("traceroute: usage: traceroute <src-ip> <dst-ip>"); return; }
-    const sv=S.assign[src], dv=S.assign[dst];
-    tprint("traceroute from "+src+" to "+dst);
-    if(sv&&dv&&sv!==dv){
-      tprint("  1  10.0.20.1  0.4 ms");
-      tprint("  2  * * *  administratively filtered (VLAN "+sv+" -> VLAN "+dv+")");
-      tprint("  destination unreachable: segments are isolated");
-      if((src==='10.0.20.100'&&dst==='10.0.20.10')||(src==='10.0.20.10'&&dst==='10.0.20.100')) markObj(n,'s5');
-    } else {
-      tprint("  1  "+dst+"  0.3 ms   <-- reached in a single hop, same segment");
-      tprint("  no routed boundary was crossed");
-      if((src==='10.0.20.100'&&dst==='10.0.20.10')) markObj(n,'s2');
-    }
-    return;
-  }
-  if(c==='vlan'){
-    const sub=(a[1]||'').toLowerCase();
-    if(sub==='create'){
-      const id=a[2], name=a[3]||('VLAN'+a[2]);
-      if(!/^\d+$/.test(id||'')){ tprint("vlan create: usage: vlan create <id> <name>"); return; }
-      if(id==='1'){ tprint("% VLAN 1 is the default VLAN and should not be used for user data."); return; }
-      S.vlans[id]=name; tprint("VLAN "+id+" ("+name+") created");
-      if(Object.keys(S.vlans).length>=3) markObj(n,'s3');
-      return;
-    }
-    if(sub==='assign'){
-      const ip=a[2], id=a[3];
-      if(!ipToInt(ip||'')||!/^\d+$/.test(id||'')){ tprint("vlan assign: usage: vlan assign <ip> <vlan-id>"); return; }
-      if(!S.vlans[id]){ tprint("% VLAN "+id+" does not exist. Create it first."); return; }
-      S.assign[ip]=id; tprint(ip+" assigned to VLAN "+id+" ("+S.vlans[id]+")");
-      const rv=S.assign['10.0.20.10'], gv=S.assign['10.0.20.100'];
-      if(rv&&gv&&rv!==gv) markObj(n,'s4');
-      return;
-    }
-    tprint("% vlan: use create or assign"); return;
-  }
-  if(line==='show vlan'){
-    if(!Object.keys(S.vlans).length){ tprint("(no VLANs configured)"); return; }
-    tprint("VLAN  NAME             MEMBERS");
-    Object.keys(S.vlans).forEach(id=>{
-      const mem=Object.keys(S.assign).filter(ip=>S.assign[ip]===id);
-      tprint(String(id).padEnd(6)+String(S.vlans[id]).padEnd(17)+(mem.length?mem.join(', '):'(none)'));
-    });
-    const un=HOSTS.filter(h=>!S.assign[h[0]]).map(h=>h[0]);
-    if(un.length) tprint("\nunassigned (still in the default segment): "+un.join(', '));
-    return;
-  }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-function checkSeg(){
-  const n='segment.map';
-  if(allObjExcept(n,[])) tryAward(n,'fb_seg');
-  else failNode(n,'fb_seg','Not all objectives are complete. Scan the range, prove it is flat, build at least three VLANs, separate the records server from the guest access point, then trace again to confirm isolation.');
-}
-function allObjExcept(n,skip){ return (OBJ[n]||[]).every(o=>skip.includes(o[0])||objDone(n,o[0])); }
-
-/* ==================== NODE 5: acl.forge (packet engine) ==================== */
-const ACL_TESTS=[
-  {d:'in', proto:'tcp', port:443, src:'203.0.113.55', dst:'10.0.10.5', want:'permit', why:'public HTTPS to the web server must work'},
-  {d:'in', proto:'tcp', port:23,  src:'203.0.113.55', dst:'10.0.10.5', want:'deny',   why:'Telnet from the internet must never be allowed'},
-  {d:'in', proto:'tcp', port:22,  src:'203.0.113.55', dst:'10.0.10.5', want:'deny',   why:'SSH from the internet is not permitted'},
-  {d:'in', proto:'tcp', port:22,  src:'10.0.9.4',     dst:'10.0.10.5', want:'permit', why:'SSH from the management subnet is permitted'},
-  {d:'in', proto:'tcp', port:3389,src:'198.51.100.7', dst:'10.0.10.5', want:'deny',   why:'RDP from the internet must be blocked'},
-  {d:'in', proto:'tcp', port:445, src:'203.0.113.55', dst:'10.0.30.10',want:'deny',   why:'nothing inbound may reach the records server'},
-];
-function parseRule(line,idx){
-  const s=line.trim().toLowerCase();
-  if(!s||s.startsWith('#')||s.startsWith('!')) return null;
-  const m=s.match(/^(permit|allow|deny)\s+(in|inbound|out|outbound)\s+(tcp|udp|icmp|any|all)\s+(\d{1,5}|any|all)\s+from\s+(\S+)\s+to\s+(\S+)\s*;?$/);
-  if(!m) return {error:true, raw:line, n:idx};
-  return {
-    n:idx, raw:line.trim(),
-    action:(m[1]==='deny')?'deny':'permit',
-    dir:(m[2][0]==='i')?'in':'out',
-    proto:(m[3]==='all')?'any':m[3],
-    port:(m[4]==='any'||m[4]==='all')?'any':parseInt(m[4],10),
-    src:(m[5]==='all')?'any':m[5],
-    dst:(m[6]==='all')?'any':m[6],
-  };
-}
-function ruleMatches(r,p){
-  if(r.dir!==p.d) return false;
-  if(r.proto!=='any' && r.proto!==p.proto) return false;
-  if(r.port!=='any' && r.port!==p.port) return false;
-  if(!cidrMatch(p.src,r.src)) return false;
-  if(!cidrMatch(p.dst,r.dst)) return false;
-  return true;
-}
-function aclHandler(raw){
-  const n='acl.forge'; const line=raw.toLowerCase(); const a=raw.split(/\s+/);
-  if(a[0].toLowerCase()==='help'){ tprint("help, clear, show req, show rules, test"); return; }
-  if(line==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(line==='show req'||line==='show requirements'){
-    markObj(n,'f1');
-    tprint("FIREWALL A REQUIREMENTS (external boundary, internet -> screened subnet)");
-    tprint("  R1  the public appointment web server 10.0.10.5 must be reachable");
-    tprint("      from anywhere over HTTPS");
-    tprint("  R2  SSH is permitted only from the management subnet 10.0.9.0/24");
-    tprint("  R3  every other inbound packet must be denied, including any");
-    tprint("      inbound traffic toward the records server 10.0.30.10");
-    tprint("");
-    tprint("RULE SYNTAX");
-    tprint("  <permit|deny> <in|out> <tcp|udp|icmp|any> <port|any> from <cidr|any> to <cidr|any>");
-    tprint("  example:  permit in tcp 443 from any to 10.0.10.5");
-    tprint("");
-    tprint("Rules are evaluated top to bottom. The FIRST match decides.");
-    tprint("If nothing matches, the implicit deny applies.");
-    return;
-  }
-  if(line==='show rules'){
-    const lines=val('aclbox').split('\n');
-    let i=0; let any=false;
-    lines.forEach(l=>{ const r=parseRule(l,++i); if(!r) return; any=true;
-      tprint(r.error? ('  '+i+'  ** SYNTAX ERROR ** '+r.raw) :
-        ('  '+i+'  '+r.action+' '+r.dir+' '+r.proto+' '+r.port+' from '+r.src+' to '+r.dst)); });
-    if(!any) tprint("(the editor is empty)");
-    return;
-  }
-  if(line==='test'){
-    const lines=val('aclbox').split('\n');
-    const rules=[]; let i=0; let bad=0;
-    lines.forEach(l=>{ const r=parseRule(l,++i); if(!r) return; if(r.error){ bad++; tprint("SYNTAX ERROR on line "+i+": "+r.raw); } else rules.push(r); });
-    if(bad){ tprint(""); tprint("Fix the syntax errors and run test again."); return; }
-    if(!rules.length){ tprint("No rules loaded. Write your access control list in the editor, then run test."); return; }
-    markObj(n,'f2');
-    tprint("running 6 test packets through "+rules.length+" rule(s)...");
-    tprint("");
-    let pass=0;
-    ACL_TESTS.forEach((p,idx)=>{
-      let verdict='deny', by='implicit deny';
-      for(const r of rules){ if(ruleMatches(r,p)){ verdict=r.action; by='rule '+r.n; break; } }
-      const ok=(verdict===p.want);
-      if(ok) pass++;
-      tprint((ok?'  PASS  ':'  FAIL  ')+'#'+(idx+1)+'  '+p.d+' '+p.proto+' '+p.port+' '+p.src+' -> '+p.dst);
-      tprint('           got '+verdict.toUpperCase()+' by '+by+', expected '+p.want.toUpperCase());
-      if(!ok) tprint('           requirement: '+p.why);
-    });
-    tprint("");
-    tprint(pass+" of 6 packets behaved as required.");
-    if(pass===6){ markObj(n,'f3'); tprint("ALL REQUIREMENTS SATISFIED."); }
-    else tprint("Check your rule ORDER before you change the rules themselves.");
-    return;
-  }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-function checkAcl(){
-  const n='acl.forge';
-  if(objDone(n,'f3')) tryAward(n,'fb_acl');
-  else failNode(n,'fb_acl','Not yet. Run test in the shell and get all six packets to behave as the requirements demand.');
-}
-
-/* ==================== NODE 6: fw.place ==================== */
-const EDGES=[
-  ['internet-dmz','the boundary between the internet and the screened subnet'],
-  ['dmz-lan','the boundary between the screened subnet and the internal LAN'],
-  ['lan-records','the boundary in front of the records segment'],
-  ['guest-lan','the boundary between the guest wireless segment and the internal LAN'],
-  ['lan-imaging','the boundary in front of the imaging segment'],
-];
-const PATHS=[
-  {from:'internet', to:'web',     need:'allow', crosses:['internet-dmz']},
-  {from:'internet', to:'records', need:'block', crosses:['internet-dmz','dmz-lan','lan-records']},
-  {from:'dmz',      to:'records', need:'block', crosses:['dmz-lan','lan-records']},
-  {from:'guest',    to:'records', need:'block', crosses:['guest-lan','lan-records']},
-  {from:'guest',    to:'imaging', need:'block', crosses:['guest-lan','lan-imaging']},
-];
-function fwHandler(raw){
-  const n='fw.place'; const S=sim(n); const a=raw.split(/\s+/); const c=a[0].toLowerCase(); const line=raw.toLowerCase();
-  if(c==='help'){ tprint("help, clear, topology, boundaries, place fw <boundary>, remove fw <boundary>, show fw, simulate"); return; }
-  if(c==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(line==='topology'){
-    markObj(n,'p1');
-    tprint("CALDER RIDGE, PROPOSED SEGMENTS");
-    tprint("");
-    tprint("   [ INTERNET ]");
-    tprint("        |  (internet-dmz)");
-    tprint("   [ SCREENED SUBNET ]  web 10.0.10.5");
-    tprint("        |  (dmz-lan)");
-    tprint("   [ INTERNAL LAN ]  staff 10.0.20.0/24");
-    tprint("        |------------------|--------------------|");
-    tprint("  (lan-records)      (lan-imaging)        (guest-lan)");
-    tprint("   [ RECORDS ]        [ IMAGING ]         [ GUEST WIFI ]");
-    tprint("   10.0.30.10         10.0.40.0/24        10.0.50.0/24");
-    tprint("");
-    tprint("No firewalls are currently placed.");
-    return;
-  }
-  if(line==='boundaries'){ EDGES.forEach(e=>tprint("  "+e[0].padEnd(16)+e[1])); return; }
-  if(c==='place'&&(a[1]||'').toLowerCase()==='fw'){
-    const b=(a[2]||'').toLowerCase();
-    if(!EDGES.some(e=>e[0]===b)){ tprint("% unknown boundary: "+b+"   (run boundaries)"); return; }
-    S.fws[b]=true; tprint("firewall placed on "+b);
-    if(Object.keys(S.fws).length>=4) markObj(n,'p2');
-    return;
-  }
-  if(c==='remove'&&(a[1]||'').toLowerCase()==='fw'){ const b=(a[2]||'').toLowerCase(); delete S.fws[b]; tprint("firewall removed from "+b); return; }
-  if(line==='show fw'){
-    const k=Object.keys(S.fws);
-    if(!k.length){ tprint("(no firewalls placed)"); return; }
-    k.forEach(b=>tprint("  FW on "+b)); return;
-  }
-  if(line==='simulate'){
-    tprint("simulating traffic paths...");
-    tprint("");
-    let good=0;
-    PATHS.forEach(p=>{
-      const filtered=p.crosses.some(e=>S.fws[e]);
-      const result=(p.need==='allow')? (S.fws['internet-dmz']?'allowed through the firewall':'allowed (no filtering at all)')
-                                     : (filtered?'BLOCKED':'REACHABLE');
-      let ok;
-      if(p.need==='allow') ok = !!S.fws['internet-dmz'];
-      else ok = filtered;
-      if(ok) good++;
-      tprint((ok?'  OK    ':'  RISK  ')+p.from+' -> '+p.to+'   '+result);
-      if(!ok&&p.need==='block') tprint('           no firewall on any boundary this path crosses: '+p.crosses.join(', '));
-      if(!ok&&p.need==='allow') tprint('           the internet boundary has no firewall, so this traffic is unfiltered');
-    });
-    tprint("");
-    tprint(good+" of 5 paths behave correctly.");
-    if(good===5){ markObj(n,'p2'); markObj(n,'p3'); tprint("Every unauthorized path is blocked and the public service is filtered."); }
-    else tprint("Per the course rule, every segment needs a firewall and every internet ingress and egress point needs one.");
-    return;
-  }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-function checkFw(){
-  const n='fw.place';
-  if(objDone(n,'p3')) tryAward(n,'fb_fw');
-  else failNode(n,'fb_fw','Not yet. Run simulate and get all five paths to behave correctly.');
-}
-
-/* ==================== NODE 7: log.hunt (pipes) ==================== */
-const LOGS={
- 'firewall.log':[
-  "09:14:02 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 21",
-  "09:14:02 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 22",
-  "09:14:03 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 23",
-  "09:14:03 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 25",
-  "09:14:04 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 53",
-  "09:14:04 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 110",
-  "09:14:05 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 143",
-  "09:14:05 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 445",
-  "09:14:06 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 3389",
-  "09:14:06 DENY  in tcp 203.0.113.77 -> 10.0.10.5 dport 8080",
-  "09:19:55 ALLOW in tcp 203.0.113.77 -> 10.0.10.5 dport 443",
-  "09:31:07 ALLOW out tcp 10.0.30.10 -> 198.51.100.9 dport 443 bytes=2411724800",
-  "09:33:12 ALLOW out tcp 10.0.20.41 -> 93.184.216.34 dport 443 bytes=184320",
- ],
- 'switch.log':[
-  "09:16:41 Gi0/7 mac-learn-rate 1842 addresses in 28s (baseline 2-4)",
-  "09:16:44 Gi0/7 cam-table utilization 98 percent",
-  "09:17:02 Gi0/2 mac-learn-rate 1 addresses in 30s",
- ],
- 'arp.log':[
-  "09:24:33 ARP reply 10.0.20.1 is-at 6c:88:14:2e:77:d0 (unsolicited)",
-  "09:24:33 ARP conflict 10.0.30.10 and 10.0.20.1 share 6c:88:14:2e:77:d0",
-  "09:24:40 ARP reply 10.0.20.42 is-at 9c:2a:70:14:3b:02 (solicited)",
- ],
- 'auth.log':[
-  "09:21:10 sshd FAILED password for root from 203.0.113.77",
-  "09:21:11 sshd FAILED password for root from 203.0.113.77",
-  "09:21:12 sshd FAILED password for admin from 203.0.113.77",
-  "09:21:14 sshd FAILED password for root from 203.0.113.77",
-  "09:22:02 sshd ACCEPTED publickey for jprice from 10.0.20.41",
- ],
+  /* ---------- IRONVALE ---------- */
+  "i.home":{site:"ironvale",path:"/", body:`
+    <h3>Ironvale Credit Union</h3>
+    <p>Member-owned since 1974. Four branches across the county.</p>
+    <div class="qlinks">
+      <a onclick="route('i.branches')">Branch Locations</a>
+      <a onclick="route('i.about')">About Us</a>
+      <a onclick="route('i.forms')">Forms &amp; Documents</a>
+    </div>
+    <div class="card2"><h4>Annual report published</h4><p>Our 2024 member report, including branch modernization plans, is available in forms and documents.</p></div>`},
+  "i.branches":{site:"ironvale",path:"/branches", body:`
+    <h3>Branch Locations</h3>
+    <p>Our main branch was renovated last year. We are proud to share the new layout with our members.</p>
+    ${ironvalePlan()}
+    <p style="margin-top:10px">Lobby hours 9 to 5 weekdays. Night deposit available at all hours.</p>`},
+  "i.about":{site:"ironvale",path:"/about", body:`
+    <h3>About Ironvale</h3>
+    <p>We serve 18,000 members with a staff of 62. Our board is elected annually by the membership.</p>
+    <p>See our <a onclick="route('i.forms')">published documents</a> for governance records.</p>`},
+  "i.forms":{site:"ironvale",path:"/forms", body:`
+    <h3>Forms &amp; Documents</h3>
+    <p><b>Member forms:</b> account application, direct deposit, wire transfer request.</p>
+    <p><b>Published reports:</b><br>
+      <a class="filelink" onclick="route('i.branches')">2024_member_annual_report.pdf</a> &middot;
+      <a class="filelink" onclick="route('i.forms')">board_minutes_q4.pdf</a> &middot;
+      <a class="filelink" onclick="route('i.forms')">fee_schedule.pdf</a></p>
+    <p><a onclick="route('i.home')">&lsaquo; back home</a></p>`},
 };
-function runPipeline(raw){
-  const stages=raw.split('|').map(s=>s.trim()).filter(Boolean);
-  let data=null;
-  for(const st of stages){
-    const a=st.split(/\s+/); const c=a[0].toLowerCase();
-    if(c==='cat'){
-      const f=a[1]||'';
-      const key=f.replace(/^\/?var\/log\//,'');
-      if(!LOGS[key]) return {err:"cat: "+f+": No such file"};
-      data=LOGS[key].slice(); continue;
-    }
-    if(c==='grep'){
-      let ci=false,count=false,inv=false,args=a.slice(1);
-      while(args.length&&args[0].startsWith('-')){
-        const fl=args.shift();
-        if(fl.includes('i'))ci=true; if(fl.includes('c'))count=true; if(fl.includes('v'))inv=true;
-      }
-      const pat=args.join(' ').replace(/^["']|["']$/g,'');
-      if(data===null){
-        const f=args[args.length-1];
-        return {err:"grep: reading a file directly is not supported here. Use: cat <file> | grep <pattern>"};
-      }
-      if(!pat) return {err:"grep: no pattern given"};
-      let out=data.filter(l=> ci? l.toLowerCase().includes(pat.toLowerCase()) : l.includes(pat));
-      if(inv) out=data.filter(l=>!out.includes(l));
-      data = count? [String(out.length)] : out;
-      continue;
-    }
-    if(c==='wc'){ if(data===null) return {err:"wc: no input"}; data=[String(data.length)]; continue; }
-    if(c==='sort'){ if(data===null) return {err:"sort: no input"}; data=data.slice().sort(); continue; }
-    if(c==='uniq'){
-      if(data===null) return {err:"uniq: no input"};
-      const counts={}; data.forEach(l=>counts[l]=(counts[l]||0)+1);
-      const keys=Object.keys(counts);
-      data = a.includes('-c')? keys.map(k=>String(counts[k]).padStart(6)+' '+k) : keys;
-      continue;
-    }
-    if(c==='head'){ if(data===null) return {err:"head: no input"}; const nn=parseInt((a[2]||a[1]||'10').replace('-n',''),10)||10; data=data.slice(0,nn); continue; }
-    if(c==='tail'){ if(data===null) return {err:"tail: no input"}; const nn=parseInt((a[2]||a[1]||'10').replace('-n',''),10)||10; data=data.slice(-nn); continue; }
-    return {err:"unsupported command in pipeline: "+c};
-  }
-  return {data:data||[]};
-}
-function logHandler(raw){
-  const n='log.hunt'; const line=raw.toLowerCase(); const a=raw.split(/\s+/); const c=a[0].toLowerCase();
-  if(c==='help'){
-    tprint("help, clear, ls /var/log, cat <file>");
-    tprint("pipes supported: cat <file> | grep [-i|-c|-v] <pattern> | wc -l | sort | uniq -c | head -n | tail -n");
-    tprint("example: cat firewall.log | grep DENY | wc -l");
-    return;
-  }
-  if(line==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF[n]=''; return; }
-  if(line==='ls /var/log'||line==='ls'){
-    markObj(n,'l1');
-    Object.keys(LOGS).forEach(f=>tprint("  "+f+"   ("+LOGS[f].length+" lines)"));
-    return;
-  }
-  if(raw.includes('|')||c==='cat'||c==='grep'||c==='wc'||c==='sort'||c==='uniq'){
-    const res=runPipeline(raw);
-    if(res.err){ tprint(res.err); return; }
-    if(!res.data.length){ tprint("(no matching lines)"); return; }
-    res.data.forEach(l=>tprint(l));
-    /* objective detection */
-    const low=raw.toLowerCase();
-    if(low.includes('firewall.log')&&low.includes('deny')&&(low.includes('wc')||low.includes('-c'))){
-      if(res.data.length===1&&res.data[0].trim()==='10') markObj(n,'l2');
-    }
-    if(low.includes('arp')&&(low.includes('conflict')||low.includes('unsolicited')||low.includes('is-at'))) markObj(n,'l3');
-    if(low.includes('arp.log')&&!low.includes('grep')) markObj(n,'l3');
-    return;
-  }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-function checkLog(){
-  const n='log.hunt';
-  const ip=norm(val('log_ip'));
-  const gb=norm(val('log_gb')).replace(/\s*(gb|gib|gigabytes?)\s*$/,'').trim();
-  const gbNum=parseFloat(gb);
-  const okIp = ip==='203.0.113.77';
-  const okGb = !isNaN(gbNum) && Math.abs(gbNum-2.4)<0.35;
-  const okMcq = radio('lq1')==='c';
-  if(okIp&&okGb&&okMcq){ markObj(n,'l2'); markObj(n,'l3'); markObj(n,'l4'); tryAward(n,'fb_log'); }
-  else failNode(n,'fb_log','Not correct yet. '+(!okIp?'Re-check which external address appears across the firewall and authentication logs. ':'')+(!okGb?'Convert the byte count on the outbound transfer into gigabytes. ':'')+(!okMcq?'Reconsider which single log line represents the greatest loss to the hospital. ':''));
+
+/* register public pages as routable nodes */
+Object.keys(PAGES).forEach(k=>{ NODES[k]={ site:true, label:k, render:()=>publicPage(k) }; });
+
+function webCount(){ return WEB_ORDER.filter(k=>state.webflags[k]).length; }
+
+function publicPage(key){
+  const pg = PAGES[key], s = SITES[pg.site];
+  const nav = s.nav.map(([k,l])=>`<a class="${k===key?'active':''}" onclick="route('${k}')">${l}</a>`).join('');
+  const switcher = Object.keys(SITES).map(id=>{
+    const on = id===pg.site ? 'on':'';
+    const first = SITES[id].nav[0][0];
+    return `<a class="${on}" onclick="route('${first}')">${SITES[id].domain}</a>`;
+  }).join('');
+  return `
+  <div class="sitesel">${switcher}</div>
+  <div class="browser">
+    <div class="bchrome"><span class="bdot"></span><span class="bdot"></span><span class="bdot"></span>
+      <span class="burl"><span class="lock">&#128274;</span> https://${s.domain}${pg.path}</span></div>
+    <div class="page">
+      <div class="ph" style="background:${s.color}">
+        <div class="crest" style="color:${s.crestFg}">${s.crest}</div>
+        <div><h2>${s.name}</h2><div class="tagline">${s.tagline}</div></div>
+      </div>
+      <div class="pnav" style="background:${s.nav2}">${nav}</div>
+      <div class="pbody" style="--acc:${s.color}">${pg.body}</div>
+      <div class="pfoot" style="background:${s.nav2}">&copy; ${s.name} (fictional) &middot;
+        ${pg.site==='vantor'?`<a onclick="route('v.sitemap')">Sitemap</a>`:''}
+        ${pg.site==='northgate'?`<a onclick="route('n.security')">Safety &amp; Security</a>`:''}
+        ${pg.site==='ironvale'?`<a onclick="route('i.forms')">Forms &amp; Documents</a>`:''}
+      </div>
+    </div>
+  </div>
+  <div class="small" style="margin-top:8px">AUDIT MODE: browse all three organizations and click anything that represents a <b>physical-security failure</b>. Findings confirmed: ${webCount()}/5</div>`;
 }
 
-/* ==================== LOCKOUT (answer submissions only) ==================== */
-const LOCK_SECONDS=20;
+/* --- the five findings --- */
+const VULN_Q = {
+  v1:{ back:'v.facilities',
+    q:"The published plan shows the server room reachable from a 45 m rear corridor that has no camera and an unmonitored rear service door. Which detection principle is being violated?",
+    opts:["Motion sensors should never be installed indoors",
+          "Every point of ingress and egress should be under camera coverage; this corridor and rear door are an unwatched path to the server room",
+          "Floor plans must always be printed in color",
+          "Cameras are only required in rooms containing paper records"], ans:1,
+    hint:"Ask which openings a detection plan is required to cover before anything else, then trace where this corridor leads."},
+  v2:{ back:'v.directory',
+    q:"A photograph published in the annual report shows a note with the server-room door code. What is the failure?",
+    opts:["Access credentials exposed to the public, defeating the lock entirely",
+          "The photograph resolution is too high",
+          "Annual reports should not include photographs",
+          "The code is too short to be secure"], ans:0,
+    hint:"Ignore the photograph itself and ask what information a stranger now holds, and what control it renders pointless."},
+  v3:{ back:'v.careers',
+    q:"The new-hire handbook instructs staff to hold the door for anyone in a vendor vest rather than send them to reception. Which failure is this?",
+    opts:["A technical control misconfiguration",
+          "A corrective control being used preventively",
+          "A managerial control that trains employees into piggybacking, undoing the badge system",
+          "An availability problem"], ans:2,
+    hint:"A written rule that people follow is a particular category of control. Ask what attack this rule guarantees will succeed."},
+  v4:{ back:'n.security',
+    q:"The hospital advertises motion sensors in every lobby, waiting room, and main corridor. Why is this a weakness rather than a strength?",
+    opts:["Motion sensors are more expensive than cameras",
+          "Sensors cannot operate in daylight",
+          "Hospitals are exempt from monitoring requirements",
+          "Placing them in constant-traffic areas floods staff with false alarms, so genuine alerts stop being trusted"], ans:3,
+    hint:"Imagine being the officer receiving these alerts all day. What happens to your response the hundredth time it fires for a visitor walking to the gift shop?"},
+  v5:{ back:'i.branches',
+    q:"The credit union publishes a floor plan locating its vault room and noting the wall construction and alarm panel position. What does this enable?",
+    opts:["Nothing; floor plans are public records anyway",
+          "It hands an adversary free reconnaissance on the highest-value room and how to defeat its protections",
+          "It improves member confidence and reduces risk",
+          "It only matters if the branch has no guard"], ans:1,
+    hint:"Think about the first phase of any attack, and what an adversary would otherwise have to enter the building to learn."},
+};
+
+function foundVuln(id){
+  const screen=document.getElementById('screen');
+  if(state.webflags[id]){
+    screen.innerHTML=`<div class="site"><h1 class="glitch">// ALREADY CONFIRMED</h1>
+      <div class="brief">You already recovered <span class="flag">${WEB_FRAG[id]}</span> from this finding.</div>
+      <div style="margin-top:12px"><a class="link" onclick="route('${VULN_Q[id].back}')">&lsaquo; back to the site</a></div></div>`;
+    return;
+  }
+  const v=VULN_Q[id];
+  screen.innerHTML=`
+   <div class="site">
+    <h1 class="glitch">// FINDING FLAGGED</h1>
+    <div class="brief"><b>Good catch.</b> Name the failure precisely to recover the fragment.</div>
+    <div class="q">${v.q}</div>
+    <div class="opts">${v.opts.map((o,i)=>`<label><input type="radio" name="vq" value="${i}"> ${o}</label>`).join('')}</div>
+    <button class="btn" onclick="confirmVuln('${id}')">CONFIRM FINDING</button>
+    <span class="hintbtn" onclick="tog('vh')">need a hint?</span>
+    <div class="hint" id="vh">${v.hint}</div>
+    <div class="feedback" id="fb_vuln"></div>
+    <div style="margin-top:12px"><a class="link" onclick="route('${v.back}')">&lsaquo; back to the site</a></div>
+   </div>`;
+}
+function confirmVuln(id){
+  const v=VULN_Q[id];
+  if(parseInt(radio('vq'))===v.ans){
+    if(!state.webflags[id]){ state.webflags[id]=WEB_FRAG[id]; state.xp+=150; save(); renderAll(); }
+    showFB('fb_vuln', true, `CONFIRMED. Fragment recovered: <span class="flag">${WEB_FRAG[id]}</span> (+150 XP)<br>
+      <span class="small">${webCount()}/5 findings confirmed. ${webCount()===5?'All five recovered. Return to vault.door to assemble the final command.':'Keep auditing all three organizations.'}</span>`);
+  } else {
+    showFB('fb_vuln', false, 'Not the precise failure. Read the hint and try again.');
+    const h=document.getElementById('vh'); if(h) h.style.display='block';
+  }
+}
+
+/* ============ LOCKOUT ============ */
+const LOCK_SECONDS = 20;
 function unsolvedCount(){ return MISSION.filter(k=>!state.flags[k]).length; }
 function isLastNode(k){ return !state.flags[k] && unsolvedCount()===1; }
-function lockRemaining(k){ return Math.max(0,Math.ceil(((state.lock[k]||0)-Date.now())/1000)); }
-const HINT_ID={'arp.recon':'h1','cam.table':'h2','wifi.audit':'h3','segment.map':'h4','acl.forge':'h5','fw.place':'h6','log.hunt':'h7'};
-function failNode(node,fbId,msg){
-  const hid=HINT_ID[node]; if(hid){const h=document.getElementById(hid); if(h)h.style.display='block';}
-  if(isLastNode(node)){ showFB(fbId,false,msg+' <span class="small">(Hint revealed. This is your last exercise, so no lockout.)</span>'); return; }
-  state.lock[node]=Date.now()+LOCK_SECONDS*1000; save(); renderAll();
-  showFB(fbId,false,msg); startLock(node,fbId);
+function lockRemaining(k){ return Math.max(0, Math.ceil(((state.lock[k]||0) - Date.now())/1000)); }
+function failNode(nodeKey, fbId, msg){
+  const hid = HINT_ID[nodeKey];
+  if(hid){ const h=document.getElementById(hid); if(h) h.style.display='block'; }
+  if(isLastNode(nodeKey)){
+    showFB(fbId, false, msg + ' <span class="small">(Hint revealed. This is your last node, so no lockout. Try again when ready.)</span>');
+    return;
+  }
+  state.lock[nodeKey] = Date.now() + LOCK_SECONDS*1000;
+  save(); renderAll();
+  showFB(fbId, false, msg);
+  startLockCountdown(nodeKey, fbId);
 }
-function startLock(node,fbId){
-  const btn=document.getElementById('btn_'+node);
-  const tick=()=>{ const rem=lockRemaining(node);
-    if(rem>0){ if(btn){btn.disabled=true;btn.textContent='LOCKED '+rem+'s';btn.classList.add('locked');} setTimeout(tick,500); }
-    else { delete state.lock[node]; save(); renderAll(); if(btn){btn.disabled=false;btn.textContent='SUBMIT FINDINGS';btn.classList.remove('locked');} } };
+function startLockCountdown(nodeKey, fbId){
+  const btn = document.getElementById('btn_'+nodeKey);
+  const tick = ()=>{
+    const rem = lockRemaining(nodeKey);
+    if(rem>0){
+      if(btn){ btn.disabled=true; btn.textContent = `LOCKED ${rem}s`; btn.classList.add('locked'); }
+      setTimeout(tick, 500);
+    } else {
+      delete state.lock[nodeKey]; save(); renderAll();
+      if(btn){ btn.disabled=false; btn.textContent='DECRYPT FRAGMENT'; btn.classList.remove('locked'); }
+    }
+  };
   tick();
 }
-function tryAward(node,fbId){
-  const frag=FRAG[node];
-  if(!state.flags[node]){ state.flags[node]=frag; state.xp+=150; save(); renderAll(); }
-  showFB(fbId,true,'EXERCISE COMPLETE. Key fragment recovered: <span class="flag">'+frag+'</span> (+150 XP)<br><span class="small">'+
-    (MISSION.filter(k=>state.flags[k]).length===7?'All seven recovered. Connect to core.switch.':'Keep working the range.')+'</span>');
-}
 
-/* ==================== NODE PAGES ==================== */
-const NODES={
- home:{hidden:true,render(){return '<div class="site">'+
-   '<h1 class="glitch">// A.N.N. WIRETAP: NETWORK DEFENSE RANGE</h1>'+
-   '<div class="url-tag">node://home</div>'+
-   '<div class="evi">A.N.N. NETWORK DEFENSE RANGE v3.0 ....... ONLINE\n'+
-   'UNIT 3 MODULE: SECURING NETWORKS ........ LOADED\n'+
-   'MODE: LIVE SIMULATION (this is not a quiz)\n\n'+
-   'You are the on-call analyst for CALDER RIDGE REGIONAL HOSPITAL.\n'+
-   'The network is flat, under-monitored, and already being probed.\n\n'+
-   'STAGE 1  Seven range exercises in DEEP WIKI I. Each one gives you a\n'+
-   '         real shell. You will read live tables, reconfigure real\n'+
-   '         devices, write an access control list that actual packets\n'+
-   '         are tested against, and pipe commands over real log files.\n'+
-   '         Objectives tick off as the network state changes.\n'+
-   '         Finish an exercise to decrypt one key fragment.\n\n'+
-   'STAGE 2  Assemble all 7 fragments to unlock the live incident.\n\n'+
-   'RULES    Type <b>help</b> in any shell. Wrong COMMANDS cost nothing;\n'+
-   '         experiment freely. Only a wrong ANSWER submission locks an\n'+
-   '         exercise for 20 seconds.\n\n'+
-   'Some addresses in the index are decommissioned. Start at arp.recon.</div>'+
-   '</div>';}},
-
- 'arp.recon':{label:'arp.recon',render(){return '<div class="site">'+
-   '<h1>ARP RECON <span class="tag">3.1.A</span></h1>'+
-   '<div class="url-tag">node://arp.recon/host/ws-41</div>'+
-   '<div class="mission"><b>SITUATION:</b> You are on staff workstation ws-41. Traffic to the records server feels slow and a colleague reports a certificate warning. Get onto the gateway ARP cache and find out who is actually receiving that traffic.</div>'+
-   objBox('arp.recon')+
-   termHTML('arp.recon','ws-41:~$','Try: <b>ip addr</b>, <b>arp -a</b> (or <b>ip neigh show</b>), <b>ping &lt;ip&gt;</b>')+
-   '<div class="q">Submit your findings: the attacker hardware address, and the IP address they are impersonating.</div>'+
-   '<div class="ansrow"><input id="arp_mac" placeholder="attacker MAC (aa:bb:cc:dd:ee:ff)" spellcheck="false">'+
-   '<input id="arp_ip" placeholder="spoofed IP address" spellcheck="false"></div>'+
-   '<button class="btn" id="btn_arp.recon" onclick="checkArp()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h1\')">need a hint?</span>'+
-   '<div class="hint" id="h1">Dump the cache and read down the hardware address column rather than the IP column. A physical device has exactly one hardware address, so if one address is cached for several IPs, one machine is claiming to be several devices. The IP that matters most is the one every other host sends its off-subnet traffic to.</div>'+
-   '<div class="feedback" id="fb_arp"></div></div>';},
-   after(){ wireTerm('arp.recon',arpHandler,'A.N.N. range shell. Ubuntu 24.04 LTS. Type help for commands.','ws-41:~$'); }},
-
- 'cam.table':{label:'cam.table',render(){return '<div class="site">'+
-   '<h1>CAM TABLE <span class="tag">3.1.A / 3.3.B</span></h1>'+
-   '<div class="url-tag">node://cam.table/switch/sw3</div>'+
-   '<div class="mission"><b>SITUATION:</b> Switch SW3 is behaving like a hub. Users on other ports report seeing traffic that is not theirs. Get into SW3, find the interface responsible, and shut the technique down at the port.</div>'+
-   objBox('cam.table')+
-   termHTML('cam.table','SW3>','Cisco-style shell. Try: <b>enable</b>, <b>show mac address-table</b>, <b>configure terminal</b>, <b>interface gi0/7</b>, <b>switchport port-security maximum 3</b>, <b>end</b>, <b>show port-security</b>')+
-   '<button class="btn" id="btn_cam.table" onclick="checkCam()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h2\')">need a hint?</span>'+
-   '<div class="hint" id="h2">Compare the per-interface address counts. A legitimate access port serves one or two devices. The countermeasure limits how many hardware addresses a single interface may learn, and you must apply it in interface configuration mode, then verify.</div>'+
-   '<div class="feedback" id="fb_cam"></div></div>';},
-   after(){ const S=sim('cam.table'); const pr=S.mode==='config-if'?'SW3(config-if)#':S.mode==='config'?'SW3(config)#':S.mode==='priv'?'SW3#':'SW3>';
-     wireTerm('cam.table',camHandler,'SW3 console. Type help for commands.',pr); }},
-
- 'wifi.audit':{label:'wifi.audit',render(){return '<div class="site">'+
-   '<h1>WIRELESS AUDIT <span class="tag">3.2.B</span></h1>'+
-   '<div class="url-tag">node://wifi.audit/ap/wap-lobby</div>'+
-   '<div class="mission"><b>SITUATION:</b> The lobby access point was installed by a contractor and never reviewed. Bring every setting into line with the hospital wireless security policy, then answer the review question.</div>'+
-   objBox('wifi.audit')+
-   termHTML('wifi.audit','WAP-LOBBY#','Try: <b>show running-config</b>, then <b>set encryption wpa3</b>, <b>set wps off</b>, <b>set beacon off</b>, <b>set power low</b>, <b>set auth 8021x</b>')+
-   '<div class="q">Review question. You disabled beacon broadcasting. What has that actually accomplished?</div>'+
-   '<div class="opts">'+
-   '<label><input type="radio" name="wq1" value="a"> It encrypts the wireless frames so they cannot be read</label>'+
-   '<label><input type="radio" name="wq1" value="b"> It raises the effort needed to discover the network, but it is not encryption and a determined adversary can still find the SSID</label>'+
-   '<label><input type="radio" name="wq1" value="c"> It prevents any device from ever associating with the access point</label>'+
-   '<label><input type="radio" name="wq1" value="d"> It replaces the need for an authentication server</label>'+
-   '</div>'+
-   '<button class="btn" id="btn_wifi.audit" onclick="checkWifi()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h3\')">need a hint?</span>'+
-   '<div class="hint" id="h3">Work through the running configuration line by line. Two of the protocols on this device are considered broken outright. One setting lets the signal leave the building. One setting means every user shares a single credential instead of authenticating individually.</div>'+
-   '<div class="feedback" id="fb_wifi"></div></div>';},
-   after(){ wireTerm('wifi.audit',wifiHandler,'WAP-LOBBY management shell. Type help for commands.','WAP-LOBBY#'); }},
-
- 'segment.map':{label:'segment.map',render(){return '<div class="site">'+
-   '<h1>SEGMENT MAP <span class="tag">3.3</span></h1>'+
-   '<div class="url-tag">node://segment.map/core/vlan-planner</div>'+
-   '<div class="mission"><b>SITUATION:</b> Everything at Calder Ridge sits in one broadcast domain. Prove it, then build the VLANs that separate the assets that must never reach each other. The records server and the guest access point are the pair that matters most.</div>'+
-   objBox('segment.map')+
-   termHTML('segment.map','core#','Try: <b>scan 10.0.20.0/24</b>, <b>traceroute 10.0.20.100 10.0.20.10</b>, <b>vlan create 30 RECORDS</b>, <b>vlan assign 10.0.20.10 30</b>, <b>show vlan</b>, then traceroute again')+
-   '<button class="btn" id="btn_segment.map" onclick="checkSeg()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h4\')">need a hint?</span>'+
-   '<div class="hint" id="h4">First gather evidence: enumerate the hosts, then trace from the guest access point to the records server and count the hops. One hop with no filtering is the proof. Then build separate VLANs and place the guest wireless and the records server in different ones before you trace the same path again.</div>'+
-   '<div class="feedback" id="fb_seg"></div></div>';},
-   after(){ wireTerm('segment.map',segHandler,'core switch planner. Type help for commands.','core#'); }},
-
- 'acl.forge':{label:'acl.forge',render(){return '<div class="site">'+
-   '<h1>ACL FORGE <span class="tag">3.4.B / 3.4.D</span></h1>'+
-   '<div class="url-tag">node://acl.forge/fw-a/ruleset</div>'+
-   '<div class="mission"><b>SITUATION:</b> Firewall A guards the internet boundary. Write its inbound access control list. Six real packets will be pushed through your rules in order, and the first rule that matches each packet decides its fate.</div>'+
-   objBox('acl.forge')+
-   '<div class="q">RULE EDITOR (one rule per line)</div>'+
-   '<textarea class="rules" id="aclbox" spellcheck="false" placeholder="# run: show req    in the shell below to load the requirements and the syntax"></textarea>'+
-   termHTML('acl.forge','fw-a#','Try: <b>show req</b>, <b>show rules</b>, <b>test</b>')+
-   '<button class="btn" id="btn_acl.forge" onclick="checkAcl()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h5\')">need a hint?</span>'+
-   '<div class="hint" id="h5">Order is everything here. A broad deny placed above a narrow permit means the permit is never reached. Write your most specific permits first, then close the list with a deny that catches everything else. Watch the difference between a source of any and a source that is a single subnet.</div>'+
-   '<div class="feedback" id="fb_acl"></div></div>';},
-   after(){ wireTerm('acl.forge',aclHandler,'FW-A rule engine. Type help for commands. Run show req first.','fw-a#'); }},
-
- 'fw.place':{label:'fw.place',render(){return '<div class="site">'+
-   '<h1>FIREWALL PLACEMENT <span class="tag">3.4.C</span></h1>'+
-   '<div class="url-tag">node://fw.place/design/boundaries</div>'+
-   '<div class="mission"><b>SITUATION:</b> The segments exist now, but nothing filters between them. Place firewalls on the boundaries that need them, then simulate real traffic paths. Five paths are evaluated and every unauthorized one must be blocked.</div>'+
-   objBox('fw.place')+
-   termHTML('fw.place','design#','Try: <b>topology</b>, <b>boundaries</b>, <b>place fw dmz-lan</b>, <b>show fw</b>, <b>simulate</b>')+
-   '<button class="btn" id="btn_fw.place" onclick="checkFw()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h6\')">need a hint?</span>'+
-   '<div class="hint" id="h6">Run simulate early and let it tell you which paths are still reachable. It names the boundaries each failing path crosses, so you can place a firewall on one of them. Remember the course rule: every segment gets a firewall, and so does every point where the internal network meets the internet.</div>'+
-   '<div class="feedback" id="fb_fw"></div></div>';},
-   after(){ wireTerm('fw.place',fwHandler,'network design console. Type help for commands.','design#'); }},
-
- 'log.hunt':{label:'log.hunt',render(){return '<div class="site">'+
-   '<h1>LOG HUNT <span class="tag">3.5.E</span></h1>'+
-   '<div class="url-tag">node://log.hunt/siem/raw</div>'+
-   '<div class="mission"><b>SITUATION:</b> Four raw log files, one morning, one intruder. Pipe them apart and work out what happened, in order. Then tell me who did it and how much data left the building.</div>'+
-   objBox('log.hunt')+
-   termHTML('log.hunt','soc:/var/log$','Pipes work. Try: <b>ls /var/log</b>, <b>cat firewall.log | grep DENY | wc -l</b>, <b>cat arp.log</b>, <b>cat auth.log | grep FAILED | wc -l</b>')+
-   '<div class="q">Which single log line represents the greatest loss to the hospital?</div>'+
-   '<div class="opts">'+
-   '<label><input type="radio" name="lq1" value="a"> The 09:14 sequence of denied inbound connections</label>'+
-   '<label><input type="radio" name="lq1" value="b"> The 09:16 surge of learned hardware addresses on one interface</label>'+
-   '<label><input type="radio" name="lq1" value="c"> The 09:31 outbound transfer from the records server to an external host</label>'+
-   '<label><input type="radio" name="lq1" value="d"> The 09:22 accepted public key login for jprice</label>'+
-   '</div>'+
-   '<div class="q">Submit: the attacker IP address, and the size of the outbound transfer in gigabytes.</div>'+
-   '<div class="ansrow"><input id="log_ip" placeholder="attacker IP" spellcheck="false">'+
-   '<input id="log_gb" placeholder="volume in GB (e.g. 1.5)" spellcheck="false"></div>'+
-   '<button class="btn" id="btn_log.hunt" onclick="checkLog()">SUBMIT FINDINGS</button>'+
-   '<span class="hintbtn" onclick="tog(\'h7\')">need a hint?</span>'+
-   '<div class="hint" id="h7">One external address appears in more than one log file; that correlation is the point of the exercise. For the volume, find the outbound line with a byte count and convert: a gigabyte is roughly 1,000,000,000 bytes, so move the decimal rather than guessing. Ask which event moved patient data off site.</div>'+
-   '<div class="feedback" id="fb_log"></div></div>';},
-   after(){ wireTerm('log.hunt',logHandler,'SOC log console. Pipes supported. Type help for commands.','soc:/var/log$'); }},
-
- /* decoys */
- 'legacy.hub':{decoy:true,label:'legacy.hub',render(){return deadPage("DECOMMISSIONED. This hub was replaced by SW3 in 2019. No shell is listening.");}},
- 'dhcp.spare':{decoy:true,label:'dhcp.spare',render(){return deadPage("COLD SPARE. The service is installed but has never been started. Nothing to analyze here.");}},
- 'print.queue':{decoy:true,label:'print.queue',render(){return deadPage("QUEUE EMPTY. This node holds print jobs only and keeps no security logs.");}},
- 'backup.tape':{decoy:true,label:'backup.tape',render(){return deadPage("OFFLINE MEDIA. The tape library is not network reachable by design.");}},
-};
-
-/* ==================== STAGE 2: LIVE INCIDENT ==================== */
-function phaseDone(p){ return !!state.phase[p]; }
-function phaseCount(){ return PHASES.filter(p=>state.phase[p]).length; }
-function awardPhase(p,fbId,msg){
-  if(!state.phase[p]){ state.phase[p]=PFRAG[p]; state.xp+=200; save(); renderAll(); }
-  showFB(fbId,true,'PHASE CLEARED. Fragment: <span class="flag">'+PFRAG[p]+'</span> (+200 XP)<br><span class="small">'+msg+'</span>');
-}
-const INCIDENT={
- p1:{title:'PHASE 1: CORRELATE',ced:'3.5.A',
-   body:'<div class="mission"><b>LIVE:</b> Three separate systems each raised something minor in the last ten minutes. Individually none of them escalates. Use the SIEM to pull them together.</div>'+
-     '<div class="evi">NIDS   10:41  port sweep from 198.51.100.23        severity LOW\n'+
-     'SWITCH 10:44  Gi0/11 learned 1,610 addresses in 22 s    severity LOW\n'+
-     'AUTH   10:47  9 failed SSH logins for svc_backup        severity LOW\n'+
-     'ARP    10:49  10.0.30.1 is-at 4a:11:9f:20:cd:55 (unsolicited)   severity LOW</div>'+
-     '<div class="q">Which capability is required to turn these four low-severity events into one high-priority incident, and why?</div>'+
-     '<div class="opts">'+
-     '<label><input type="radio" name="i1" value="a"> A stateless firewall, because it inspects every packet header</label>'+
-     '<label><input type="radio" name="i1" value="b"> A NIDS on each segment, because more sensors means more alerts</label>'+
-     '<label><input type="radio" name="i1" value="c"> A SIEM, because it collects and analyzes data from multiple sources and detects the pattern across them</label>'+
-     '<label><input type="radio" name="i1" value="d"> A vulnerability scanner, because it lists known weaknesses</label>'+
-     '</div>',
-   check(){ if(radio('i1')==='c') awardPhase('p1','fb_i1','Correlation established. Move to phase 2.');
-     else showFB('fb_i1',false,'Not that one. Ask which tool is designed to ingest firewall, sensor, device, and application logs together.'); }},
- p2:{title:'PHASE 2: SEQUENCE THE CHAIN',ced:'3.1.A / 3.5.E',
-   body:'<div class="mission"><b>LIVE:</b> Put the intruder\u2019s actions into the order they must have happened. Enter the four letters with no spaces.</div>'+
-     '<div class="evi">[W] switch interface flooded with thousands of fabricated hardware addresses\n'+
-     '[X] unsolicited ARP reply claims the records gateway address\n'+
-     '[Y] external host sweeps ports across the public segment\n'+
-     '[Z] repeated failed authentication attempts against a service account</div>'+
-     '<div class="q">Order of operations (four letters, for example WXYZ):</div>'+
-     '<div class="ansrow"><input id="i2" placeholder="four letters" maxlength="6" spellcheck="false"></div>',
-   check(){ const v=norm(val('i2')).toUpperCase().replace(/[^WXYZ]/g,'');
-     if(v==='YZWX') awardPhase('p2','fb_i2','Chain reconstructed. Move to phase 3.');
-     else showFB('fb_i2',false,'Not the right order. Reconnaissance always comes before anything that needs access, and rewriting a gateway mapping is only worth doing once the intruder is already positioned on the segment.'); }},
- p3:{title:'PHASE 3: CONTAIN',ced:'3.2.A / 3.3.B / 3.5.A',
-   body:'<div class="mission"><b>LIVE:</b> Apply containment. Each control must be matched to the specific technique it stops. Use the shell.</div>'+
-     objBox('incident')+
-     termHTML('incident','ir-console#','Try: <b>show threats</b>, then <b>mitigate &lt;threat&gt; with &lt;control&gt;</b>. Run <b>show controls</b> to list available controls.'),
-   check(){ const S=sim('incident')||{};
-     if(objDone('incident','m1')&&objDone('incident','m2')&&objDone('incident','m3')) awardPhase('p3','fb_i3','Containment applied. Move to phase 4.');
-     else showFB('fb_i3',false,'Containment is incomplete. Run show threats and pair every listed technique with the control that actually stops it.'); }},
- p4:{title:'PHASE 4: VERIFY',ced:'3.4.C',
-   body:'<div class="mission"><b>LIVE:</b> Containment is only real if the paths are closed. Re-run the path simulation and confirm the records segment is unreachable from the compromised guest segment.</div>'+
-     '<div class="q">After isolating the guest segment behind a firewall, an auditor asks how you know the containment worked. What is the strongest evidence?</div>'+
-     '<div class="opts">'+
-     '<label><input type="radio" name="i4" value="a"> The NIPS stopped generating alerts, so the attack ended</label>'+
-     '<label><input type="radio" name="i4" value="b"> A traffic path test from the guest segment to the records segment now returns administratively filtered at the boundary</label>'+
-     '<label><input type="radio" name="i4" value="c"> The intruder IP address no longer appears in the firewall log</label>'+
-     '<label><input type="radio" name="i4" value="d"> The switch CAM table is smaller than it was this morning</label>'+
-     '</div>',
-   check(){ if(radio('i4')==='b') awardPhase('p4','fb_i4','Verification accepted. Move to phase 5.');
-     else showFB('fb_i4',false,'Not the strongest evidence. An absence of alerts can mean the sensor is blind. Verification should positively demonstrate that the boundary now blocks the path.'); }},
- p5:{title:'PHASE 5: TUNE AND REPORT',ced:'3.5.B / 3.5.C / 3.5.D',
-   body:'<div class="mission"><b>LIVE:</b> The hospital is standing up AI-assisted detection. You must set the alerting threshold and choose a detection method, then justify the cost.</div>'+
-     '<div class="evi">AI pilot output on the incident traffic:  81% likely malicious\n'+
-     'Current threshold: none configured\n'+
-     'Constraint: this network carries clinical and imaging systems.</div>'+
-     '<div class="q">Q1. The intruder used a technique with no published signature. Which detection method could realistically catch it?</div>'+
-     '<div class="opts">'+
-     '<label><input type="radio" name="i5a" value="a"> Signature-based, because signature databases are updated continuously</label>'+
-     '<label><input type="radio" name="i5a" value="b"> Anomaly-based, because it alerts on deviation from an established baseline regardless of any known signature</label>'+
-     '<label><input type="radio" name="i5a" value="c"> Neither method can detect a technique that is new</label>'+
-     '<label><input type="radio" name="i5a" value="d"> Signature-based, because novel attacks are always added before they are used</label>'+
-     '</div>'+
-     '<div class="q">Q2. You lower the alert threshold from 90% to 60%. State the consequence.</div>'+
-     '<div class="opts">'+
-     '<label><input type="radio" name="i5b" value="a"> Fewer false positives and fewer false negatives at the same time</label>'+
-     '<label><input type="radio" name="i5b" value="b"> No change, because the model output is fixed</label>'+
-     '<label><input type="radio" name="i5b" value="c"> More attacks are caught, but false positives rise and analysts risk alert fatigue</label>'+
-     '<label><input type="radio" name="i5b" value="d"> The model becomes deterministic instead of probabilistic</label>'+
-     '</div>',
-   check(){ if(radio('i5a')==='b'&&radio('i5b')==='c') awardPhase('p5','fb_i5','Report accepted. All phases cleared.');
-     else showFB('fb_i5',false,'Not yet. One question is about what a brand-new technique can and cannot match against. The other is about the trade-off that every threshold choice forces.'); }},
-};
-/* incident shell: threat -> control pairing */
-SIM_INIT['incident']={paired:{}};
-const THREATS={
- 'arp-spoofing':{ctrl:'dynamic-arp-inspection',obj:'m1'},
- 'mac-flooding':{ctrl:'port-security',obj:'m2'},
- 'guest-lateral-movement':{ctrl:'vlan-isolation',obj:'m3'},
-};
-const CONTROLS=['dynamic-arp-inspection','port-security','vlan-isolation','disable-beacon','split-tunneling','telnet'];
-OBJ['incident']=[['m1','Stop the ARP spoofing with the correct control'],
-                 ['m2','Stop the MAC flooding with the correct control'],
-                 ['m3','Stop guest lateral movement with the correct control']];
-function incidentHandler(raw){
-  const S=sim('incident'); const a=raw.split(/\s+/); const c=a[0].toLowerCase(); const line=raw.toLowerCase();
-  if(c==='help'){ tprint("help, clear, show threats, show controls, mitigate <threat> with <control>"); return; }
-  if(line==='clear'){ const o=document.getElementById('tout'); o.textContent=''; TERMBUF['incident']=''; return; }
-  if(line==='show threats'){
-    Object.keys(THREATS).forEach(t=>tprint("  "+t.padEnd(26)+(S.paired[t]?('mitigated by '+S.paired[t]):'UNMITIGATED')));
-    return;
-  }
-  if(line==='show controls'){ CONTROLS.forEach(c2=>tprint("  "+c2)); return; }
-  if(c==='mitigate'){
-    const t=(a[1]||'').toLowerCase(); const w=(a[2]||'').toLowerCase(); const ctl=(a[3]||'').toLowerCase();
-    if(!THREATS[t]){ tprint("% unknown threat: "+t+"   (run show threats)"); return; }
-    if(w!=='with'||!ctl){ tprint("% usage: mitigate <threat> with <control>"); return; }
-    if(!CONTROLS.includes(ctl)){ tprint("% unknown control: "+ctl+"   (run show controls)"); return; }
-    if(THREATS[t].ctrl===ctl){
-      S.paired[t]=ctl; tprint("APPLIED: "+ctl+" now mitigates "+t);
-      markObj('incident',THREATS[t].obj);
-    } else {
-      tprint("REJECTED: "+ctl+" does not stop "+t+". The technique continues.");
-    }
-    return;
-  }
-  tprint("command not found: "+a[0]+"   (try: help)");
-}
-
-function incidentPage(pk){
-  const ph=INCIDENT[pk];
-  if(phaseDone(pk)){
-    return '<div class="site"><h1 class="glitch">// '+esc(ph.title)+'</h1>'+
-      '<div class="brief">Phase already cleared. Fragment: <span class="flag">'+PFRAG[pk]+'</span></div>'+
-      '<div class="small">Return to <span class="link" onclick="route(\'core.switch\')">core.switch</span> to assemble the final command.</div></div>';
-  }
-  return '<div class="site"><h1>'+esc(ph.title)+' <span class="tag">'+esc(ph.ced)+'</span></h1>'+
-    '<div class="url-tag">node://incident/'+esc(pk)+'</div>'+ph.body+
-    '<button class="btn" onclick="INCIDENT[\''+pk+'\'].check()">SUBMIT PHASE</button>'+
-    '<div class="feedback" id="fb_i'+pk.slice(1)+'"></div></div>';
-}
-PHASES.forEach(pk=>{
-  NODES['incident.'+pk]={label:'incident.'+pk, render:()=>incidentPage(pk),
-    after(){ if(pk==='p3'&&!phaseDone('p3')){ renderObj('incident'); wireTerm('incident',incidentHandler,'incident response console. Type help for commands.','ir-console#'); } }};
-});
-
-/* ==================== ROUTING ==================== */
+/* ============ ROUTING ============ */
 function connect(){ const a=norm(val('addr')).replace(/^node:\/\//,''); if(a) route(a); }
 function route(addr){
-  if(addr==='core.switch'||addr==='vault.door'){ renderFinal(); document.getElementById('addr').value='core.switch'; return; }
-  const node=NODES[addr]; const screen=document.getElementById('screen');
-  if(!node){ screen.innerHTML=deadPage('No node resolved for "'+esc(addr)+'". Check Deep Wiki I.'); return; }
-  screen.innerHTML=node.render();
-  if(!node.hidden) document.getElementById('addr').value=addr;
-  if(OBJ[addr]) renderObj(addr);
-  if(node.after) node.after();
-  if(MISSION.includes(addr)&&!state.flags[addr]&&lockRemaining(addr)>0){
-    const hid=HINT_ID[addr]; if(hid){const h=document.getElementById(hid); if(h)h.style.display='block';}
-    const fb=document.querySelector('#screen .feedback');
-    if(fb){ fb.className='feedback no'; fb.innerHTML='This exercise is locked after an incorrect submission. The shell still works; keep investigating.'; }
-    startLock(addr, fb?fb.id:'');
+  if(addr==='vault.door' || addr==='escape.room'){ renderFinal(); document.getElementById('addr').value='vault.door'; return; }
+  const node = NODES[addr];
+  const screen = document.getElementById('screen');
+  if(!node){ screen.innerHTML = deadPage(`No node resolved for "${addr}". Check Deep Wiki I for valid addresses.`); return; }
+  screen.innerHTML = node.render();
+  if(!node.hidden) document.getElementById('addr').value = addr;
+  if(MISSION.includes(addr) && !state.flags[addr] && lockRemaining(addr)>0){
+    const hid=HINT_ID[addr]; if(hid){ const h=document.getElementById(hid); if(h) h.style.display='block'; }
+    const fbId=FB_ID[addr];
+    const fb=document.getElementById(fbId);
+    if(fb){ fb.className='feedback no'; fb.innerHTML='This node is locked after an incorrect attempt. Review the revealed hint and try again shortly.'; }
+    startLockCountdown(addr, fbId);
   }
 }
+function award(nodeKey, fbId){
+  const frag = FRAG[nodeKey];
+  if(!state.flags[nodeKey]){ state.flags[nodeKey]=frag; state.xp += 100; save(); renderAll(); }
+  showFB(fbId, true, `ACCESS GRANTED. Fragment decrypted: <span class="flag">${frag}</span> (+100 XP)<br>
+    <span class="small">Fragment added to the vault passphrase bar. ${MISSION.filter(k=>state.flags[k]).length===8?'All eight recovered. Connect to vault.door.':'Keep working the index.'}</span>`);
+}
+
+/* ============ CHECKERS ============ */
+function checkPretext(){
+  const q1 = radio('p1')==='c';
+  const q2 = radio('p2')==='a';
+  const q3 = radio('p3')==='c';
+  const q4 = radio('p4')==='a';
+  if(q1&&q2&&q3&&q4) award('pretext.desk','fb_pretext');
+  else failNode('pretext.desk','fb_pretext', `Not yet. ${!q1?'Reconsider the line that borrows a named leader\u2019s power. ':''}${!q2?'Reconsider the line built on a 5:00 PM deadline and a penalty. ':''}${!q3?'Reconsider the line that says everyone else already complied. ':''}${!q4?'Reconsider the fabricated identity every tactic is built on. ':''}`);
+}
+function checkActor(){
+  const ok = val('a1')==='Cyberterrorist' && val('a2')==='Insider adversary'
+          && val('a3')==='Transnational criminal organization' && radio('a4')==='b';
+  if(ok) award('actor.profile','fb_actor');
+  else failNode('actor.profile','fb_actor','Not yet. Re-sort by the scale of intended harm and by where the access originated, then reconsider why knowing an adversary\u2019s motivation helps a defender prepare.');
+}
+function checkChain(){
+  const q1 = norm(val('c1')).toUpperCase().replace(/[^A-F]/g,'')==='BECFAD';
+  const q2 = radio('c2')==='b';
+  const q3 = radio('c3')==='c';
+  if(q1&&q2&&q3) award('chain.trace','fb_chain');
+  else failNode('chain.trace','fb_chain', `Not yet. ${!q1?'The sequence is off. ':''}${!q2?'Reconsider which event widens the blast radius beyond one machine. ':''}${!q3?'Reconsider what [C] buys the attacker that [E] does not. ':''}`);
+}
+function checkRisk(){
+  const a = norm(val('r1')).replace(/[^0-9]/g,'');
+  const q1 = a==='30000';
+  const q2 = radio('r2')==='b';
+  const q3 = radio('r3')==='d';
+  if(q1&&q2&&q3) award('risk.ledger','fb_risk');
+  else failNode('risk.ledger','fb_risk', `Not yet. ${!q1?'Recheck the annualized figure. ':''}${!q2?'Recompute the yearly savings of each control against its yearly cost. ':''}${!q3?'Reconsider the strategy where the exposure is documented and tolerated. ':''}`);
+}
+function checkControl(){
+  const ok = val('g1')==='Detective' && val('g2')==='Preventive' && val('g3')==='Managerial'
+          && radio('g4')==='a' && radio('g5')==='c';
+  if(ok) award('control.grid','fb_control');
+  else failNode('control.grid','fb_control','Not yet. For each item ask whether it only reports an event, stops it before it happens, or is a rule people follow. Then reconsider what stacking different kinds of controls gains you.');
+}
+function checkBreach(){
+  const ok = val('b1')==='Tailgating' && val('b2')==='Piggybacking' && val('b3')==='Dumpster diving'
+          && val('b4')==='Card cloning' && radio('b5')==='b' && radio('b6')==='a';
+  if(ok) award('breach.desk','fb_breach');
+  else failNode('breach.desk','fb_breach','Not yet. For the two entry attacks the deciding factor is whether the authorized employee was aware. Recheck the 16:38 line against where Okonjo actually is.');
+}
+function checkHarden(){
+  const ok = val('k1')==='Access control vestibule' && val('k2')==='Privacy screen filter'
+          && val('k3')==='Disable the USB ports' && val('k4')==='Bollards'
+          && radio('k5')==='d' && radio('k6')==='c';
+  if(ok) award('harden.plan','fb_harden');
+  else failNode('harden.plan','fb_harden','Not yet. Match each control to the precise mechanism of its threat, then reconsider what a card reader actually verifies.');
+}
+function checkWatch(){
+  const q1 = radio('w1')==='a';
+  const q2 = radio('w2')==='b';
+  const q3 = radio('w3')==='d';
+  if(q1&&q2&&q3) award('watch.post','fb_watch');
+  else failNode('watch.post','fb_watch', `Not yet. ${!q1?'Ask what an adversary could do to CAM 1 on the way in. ':''}${!q2?'Reconsider which optics suit a long narrow line of sight. ':''}${!q3?'Reconsider where an alert would actually mean something. ':''}`);
+}
+
+/* ============ FINAL DOOR ============ */
 function renderFinal(){
-  const have=MISSION.filter(k=>state.flags[k]).length;
-  const s=document.getElementById('screen');
-  document.getElementById('addr').value='core.switch';
-  if(have<7){
-    s.innerHTML='<div class="site"><h1 class="glitch">// CORE.SWITCH</h1><div class="url-tag">node://core.switch</div>'+
-      '<div class="evi">ACCESS DENIED. '+(7-have)+' key fragment(s) still missing.\nComplete every range exercise, then return.</div>'+
-      '<div class="small">Recovered so far: '+(MISSION.filter(k=>state.flags[k]).map(k=>state.flags[k]).join(' \u00b7 ')||'none yet')+'</div></div>';
+  const have = MISSION.filter(k=>state.flags[k]).length;
+  const screen = document.getElementById('screen');
+  document.getElementById('addr').value='vault.door';
+  if(have < 8){
+    screen.innerHTML = `<div class="site"><h1 class="glitch">// VAULT.DOOR</h1>
+      <div class="url-tag">node://vault.door</div>
+      <div class="evidence bad">ACCESS DENIED. ${8-have} fragment(s) still missing.
+Recover every fragment from the eight mission nodes, then return.</div>
+      <div class="small">Recovered so far: ${MISSION.filter(k=>state.flags[k]).map(k=>state.flags[k]).join(' · ')||'none yet'}</div></div>`;
     return;
   }
   if(!state.stage2){
-    s.innerHTML='<div class="site"><h1 class="glitch">// CORE.SWITCH: ACCESS KEY</h1>'+
-      '<div class="url-tag">node://core.switch &nbsp;·&nbsp; ALL FRAGMENTS RECOVERED</div>'+
-      '<p>Assemble the seven fragments <b>in exercise order</b> into the access key.</p>'+
-      '<div class="evi">'+MISSION.map(k=>'<b>'+state.flags[k]+'</b>').join('  +  ')+'</div>'+
-      '<div class="ansrow"><input id="finalIn" placeholder="ASSEMBLED KEY" spellcheck="false"></div>'+
-      '<button class="btn" onclick="checkFinal()">UNLOCK CORE</button><div class="feedback" id="fb_final"></div></div>';
+    screen.innerHTML = `<div class="site">
+      <h1 class="glitch">// VAULT.DOOR: OUTER DOOR</h1>
+      <div class="url-tag">node://vault.door &nbsp;·&nbsp; ALL FRAGMENTS RECOVERED</div>
+      <p>Assemble the eight fragments <b>in mission order</b> (2.1.A &rarr; 2.4) into a single passphrase.</p>
+      <div class="evidence">${MISSION.map(k=>`<span class="flag">${state.flags[k]}</span>`).join('  +  ')}</div>
+      <div class="ansrow"><input type="text" id="finalIn" placeholder="ASSEMBLED PASSPHRASE" spellcheck="false"></div>
+      <button class="btn" onclick="checkFinal()">OPEN OUTER DOOR</button>
+      <div class="feedback" id="fb_final"></div>
+    </div>`;
     return;
   }
-  const pc=phaseCount();
-  if(pc<5){
-    const tr=PHASES.map(p=>state.phase[p]?('  [\u2713] '+PFRAG[p]):'  [ ] ? ? ?').join('\n');
-    s.innerHTML='<div class="site"><h1 class="glitch">// CORE.SWITCH: LIVE INCIDENT</h1>'+
-      '<div class="url-tag">node://core.switch/incident</div>'+
-      '<div class="brief"><b>CORE UNLOCKED.</b> An intrusion is in progress right now. Work all five response phases from Deep Wiki II.</div>'+
-      '<div class="evi">PHASES CLEARED: '+pc+' / 5\n'+tr+'</div>'+
-      '<div style="margin-top:12px"><button class="btn" onclick="route(\'incident.p1\')">OPEN PHASE 1</button></div></div>';
-    renderAll(); return;
+  const wc = webCount();
+  if(wc < 5){
+    const tracker = WEB_ORDER.map(k=>state.webflags[k] ? ('  [\u2713] '+WEB_FRAG[k]) : '  [ ] ? ? ?').join('\n');
+    screen.innerHTML = `<div class="site">
+      <h1 class="glitch">// VAULT.DOOR: FIELD AUDIT</h1>
+      <div class="url-tag">node://vault.door/audit</div>
+      <div class="brief"><b>OUTER DOOR OPEN.</b> Deep Wiki II mirrors the public websites of three organizations. Audit all three and confirm <b>5 physical-security failures</b>.</div>
+      <div class="evidence">FINDINGS CONFIRMED: ${wc} / 5
+${tracker}</div>
+      <div class="small">Open any site from Deep Wiki II. Read the published floor plans, directories, handbooks, and security pages the way an adversary would.</div>
+      <div style="margin-top:12px"><button class="btn" onclick="route('v.home')">BEGIN THE AUDIT</button></div></div>`;
+    renderAll();
+    return;
   }
-  s.innerHTML='<div class="site"><h1 class="glitch">// CORE.SWITCH: FINAL COMMAND</h1>'+
-    '<div class="url-tag">node://core.switch &nbsp;·&nbsp; ALL PHASES CLEARED</div>'+
-    '<p>Assemble the five incident fragments in phase order into the final command.</p>'+
-    '<div class="evi">'+PHASES.map(p=>'<b>'+state.phase[p]+'</b>').join('  +  ')+'</div>'+
-    '<div class="ansrow"><input id="cmdIn" placeholder="ASSEMBLED COMMAND" spellcheck="false"></div>'+
-    '<button class="btn" onclick="checkCmd()">EXECUTE</button><div class="feedback" id="fb_cmd"></div></div>';
+  screen.innerHTML = `<div class="site">
+    <h1 class="glitch">// VAULT.DOOR: INNER DOOR</h1>
+    <div class="url-tag">node://vault.door &nbsp;·&nbsp; ALL FINDINGS CONFIRMED</div>
+    <p>Assemble the five audit fragments <b>in finding order</b> (v1 &rarr; v5) into the final command.</p>
+    <div class="evidence">${WEB_ORDER.map(k=>`<span class="flag">${state.webflags[k]}</span>`).join('  +  ')}</div>
+    <div class="ansrow"><input type="text" id="cmdIn" placeholder="ASSEMBLED COMMAND" spellcheck="false"></div>
+    <button class="btn" onclick="checkCmd()">EXECUTE</button>
+    <div class="feedback" id="fb_cmd"></div>
+  </div>`;
 }
 function checkFinal(){
   if(norm(val('finalIn')).toUpperCase().replace(/[^A-Z]/g,'')===FINAL_ANSWER){
-    state.stage2=true; state.xp+=300; save(); renderAll();
-    document.getElementById('screen').innerHTML='<div class="site"><h1 class="glitch">// CORE UNLOCKED</h1>'+
-      '<div class="evi">KEY VERIFIED: <b>'+FINAL_ANSWER+'</b>  (+300 XP)\n\nA live incident is unfolding on the hospital network.\n<span class="hl">DEEP WIKI II is now online. Check the sidebar.</span></div>'+
-      '<p>Five response phases. Correlate, sequence, contain, verify, then tune and report.</p>'+
-      '<button class="btn" onclick="route(\'incident.p1\')">OPEN PHASE 1</button></div>';
-  } else showFB('fb_final',false,'Not quite. Join the seven fragments in exercise order with no spaces.');
+    state.stage2=true; state.xp+=200; save(); renderAll();
+    document.getElementById('screen').innerHTML = `<div class="site">
+      <h1 class="glitch">// OUTER DOOR: OPEN</h1>
+      <div class="evidence">PASSPHRASE VERIFIED: <span class="flag">${FINAL_ANSWER}</span>  (+200 XP)
+
+A second index decrypts behind the door...
+<span class="glitch">DEEP WIKI II is now online. Check the sidebar.</span></div>
+      <p>Three organizations have published more than they realize: <b>Vantor Research Labs</b>, <b>Northgate Regional Medical</b>, and <b>Ironvale Credit Union</b>. Audit their public sites and confirm <b>5 physical-security failures</b>.</p>
+      <button class="btn" onclick="route('v.home')">BEGIN THE AUDIT</button>
+    </div>`;
+  } else {
+    showFB('fb_final', false, 'Not quite. Join the eight fragments in mission order with no spaces.');
+  }
 }
 function checkCmd(){
   if(norm(val('cmdIn')).toUpperCase().replace(/[^A-Z]/g,'')===WEB_ANSWER){
-    state.xp+=600; save(); renderAll();
-    document.getElementById('screen').innerHTML=winScreen();
-  } else showFB('fb_cmd',false,'Not quite. Join the five fragments in phase order with no spaces.');
+    state.xp+=400; save(); renderAll();
+    document.getElementById('screen').innerHTML = winScreen();
+  } else {
+    showFB('fb_cmd', false, 'Not quite. Join the five audit fragments in finding order with no spaces.');
+  }
 }
 function winScreen(){
-  return '<div class="site win"><pre>\n'+
-  '   +==========================================+\n'+
-  '   |   N E T W O R K   C O N T A I N E D   ok |\n'+
-  '   +==========================================+\n</pre>'+
-  '<h1 class="glitch">ANALYST CERTIFIED: UNIT 3 CLEARED</h1>'+
-  '<p>You did not answer questions about networks. You worked one. You read a poisoned ARP cache and named the impersonator, contained a CAM table flood at the port, hardened an access point line by line, proved a network was flat and then cut it into VLANs, wrote an access control list that six live packets were tested against, placed firewalls until every unauthorized path was blocked, and piped four raw log files apart to find the intruder and the data that left the building. Then you ran the incident.</p>'+
-  '<div class="evi">ACCESS KEY    : <b>'+FINAL_ANSWER+'</b>\nFINAL COMMAND : <b>'+WEB_ANSWER+'</b>\nANALYST XP    : <span class="hl">'+state.xp+'</span>\nSTATUS        : <span class="hl">Ready for the Unit 3 Exam</span></div>'+
-  '<p class="small">Screenshot this screen as your completion proof for Mr. S. Then answer this in one sentence: why does the access key you assembled explain every ACL mistake you made along the way?</p>'+
-  '<button class="btn ghost" onclick="route(\'home\')">RETURN TO A.N.N.</button></div>';
+  return `<div class="site win">
+    <pre>
+   +==================================+
+   |   V A U L T   S E C U R E D  ok  |
+   +==================================+
+    </pre>
+    <h1 class="glitch">ANALYST CERTIFIED: UNIT 2 CLEARED</h1>
+    <p>You worked every Unit 2 skill: reading social engineering, attributing adversaries, tracing an
+    attack through its phases, running the risk math, classifying controls on both dimensions,
+    identifying physical attacks from a log, prescribing the right hardening control, and auditing
+    detection placement. Then you audited three realistic organizations and found what they
+    published by accident.</p>
+    <div class="evidence">VAULT PASSPHRASE : <span class="flag">${FINAL_ANSWER}</span>
+FINAL COMMAND    : <span class="flag">${WEB_ANSWER}</span>
+ANALYST XP       : <span class="hl">${state.xp}</span>
+STATUS           : <span class="hl">Ready for the Unit 2 Exam</span></div>
+    <p class="small">Screenshot this screen as your completion proof for Mr. S.</p>
+    <button class="btn ghost" onclick="route('home')">RETURN TO A.N.N.</button>
+  </div>`;
 }
 
-/* ==================== RENDER ==================== */
+/* ============ RENDER ============ */
 function renderWiki(){
-  const layout=['arp.recon','legacy.hub','cam.table','wifi.audit','dhcp.spare','segment.map',
-                'acl.forge','print.queue','fw.place','backup.tape','log.hunt'];
-  document.getElementById('wiki').innerHTML =
-    layout.map(k=>'<a class="'+(state.flags[k]?'done':'')+'" onclick="route(\''+k+'\')">'+NODES[k].label+'</a>').join('')+
-    '<a onclick="route(\'core.switch\')" style="color:var(--amber)">core.switch</a>';
-  const w=document.getElementById('wiki2wrap');
+  // real nodes + decoys interleaved, no category, no visual tell
+  const layout = ['pretext.desk','mail.relay','actor.profile','chain.trace','crypto.locker',
+                  'risk.ledger','control.grid','beacon.dead','breach.desk','harden.plan',
+                  'archive.stub','watch.post'];
+  let html = layout.map(k=>{
+    const done = state.flags[k] ? 'done' : '';
+    return `<a class="${done}" onclick="route('${k}')">${NODES[k].label}</a>`;
+  }).join('');
+  html += `<a onclick="route('vault.door')" style="color:var(--amber)">vault.door</a>`;
+  document.getElementById('wiki').innerHTML = html;
+
+  const wrap=document.getElementById('wiki2wrap');
   if(state.stage2){
-    w.style.display='block';
-    document.getElementById('wiki2').innerHTML=
-      '<div class="small" style="margin-bottom:6px">LIVE INCIDENT ('+phaseCount()+'/5 phases):</div>'+
-      PHASES.map((p,i)=>'<a class="'+(state.phase[p]?'done':'')+'" onclick="route(\'incident.'+p+'\')">phase '+(i+1)+' &nbsp;'+INCIDENT[p].title.split(': ')[1].toLowerCase()+'</a>').join('')+
-      '<a onclick="route(\'core.switch\')" style="color:var(--amber)">core.switch</a>';
-  } else w.style.display='none';
+    wrap.style.display='block';
+    const links = [
+      ['v.home','vantorlabs.example'],['v.facilities','&nbsp;&nbsp;/facilities'],['v.directory','&nbsp;&nbsp;/directory'],
+      ['v.careers','&nbsp;&nbsp;/careers'],['v.news','&nbsp;&nbsp;/news'],['v.sitemap','&nbsp;&nbsp;/sitemap'],
+      ['n.home','northgatemed.example'],['n.security','&nbsp;&nbsp;/safety-security'],['n.visitors','&nbsp;&nbsp;/visitors'],
+      ['n.departments','&nbsp;&nbsp;/departments'],
+      ['i.home','ironvalecu.example'],['i.branches','&nbsp;&nbsp;/branches'],['i.forms','&nbsp;&nbsp;/forms'],
+    ];
+    document.getElementById('wiki2').innerHTML =
+      `<div class="small" style="margin-bottom:6px">PUBLIC SITES, audit all three (${webCount()}/5 findings):</div>` +
+      links.map(([k,l])=>`<a onclick="route('${k}')">${l}</a>`).join('') +
+      `<a onclick="route('vault.door')" style="color:var(--amber)">vault.door</a>`;
+  } else { wrap.style.display='none'; }
 }
 function renderKeys(){
-  const solved=MISSION.filter(k=>state.flags[k]).length;
-  document.getElementById('keys').innerHTML=MISSION.map(k=>{
+  const solved = MISSION.filter(k=>state.flags[k]).length;
+  document.getElementById('keys').innerHTML = MISSION.map(k=>{
     const f=state.flags[k];
-    return '<div class="keyslot '+(f?'filled':'')+'">'+(f?f:'? ?')+'</div>';
-  }).join('')+'<div class="keyslot '+(solved===7?'filled':'')+'" style="min-width:96px">'+(solved===7?'KEY READY':'KEY ?')+'</div>';
+    return `<div class="keyslot ${f?'filled':''}">${f?f:'? ? ?'}</div>`;
+  }).join('') + `<div class="keyslot ${solved===8?'filled':''}" style="min-width:104px">${solved===8?'VAULT READY':'VAULT ?'}</div>`;
 }
 function renderAll(){
-  document.getElementById('flagCount').textContent=MISSION.filter(k=>state.flags[k]).length;
-  document.getElementById('xp').textContent=state.xp;
+  document.getElementById('flagCount').textContent = MISSION.filter(k=>state.flags[k]).length;
+  document.getElementById('xp').textContent = state.xp;
   renderWiki(); renderKeys();
 }
 
-/* ==================== ANTI-INSPECTION + INIT ==================== */
+/* ============ INIT + ANTI-INSPECTION ============ */
 (function guard(){
-  document.addEventListener('contextmenu',e=>{e.preventDefault();return false;});
-  document.addEventListener('keydown',e=>{
+  document.addEventListener('contextmenu', e=>{ e.preventDefault(); return false; });
+  document.addEventListener('keydown', e=>{
     const k=(e.key||'').toLowerCase();
-    if(e.key==='F12'){e.preventDefault();return false;}
-    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(k==='i'||k==='j'||k==='c')){e.preventDefault();return false;}
-    if((e.ctrlKey||e.metaKey)&&(k==='u'||k==='s')){e.preventDefault();return false;}
-  },true);
-  document.addEventListener('selectstart',e=>{ if(!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) e.preventDefault(); });
-  document.addEventListener('dragstart',e=>e.preventDefault());
-  const sh=document.createElement('div'); sh.id='devShield';
-  sh.innerHTML='// A.N.N. SECURITY :: developer tools detected<br><br>Close the inspector to resume the range.<br>'+
-    '<span style="color:#4d6b74;font-size:13px">(The range blocks inspection to keep the exercises fair.)</span>';
-  document.body.appendChild(sh);
-  setInterval(()=>{const th=170;
+    if(e.key==='F12'){ e.preventDefault(); return false; }
+    if((e.ctrlKey||e.metaKey) && e.shiftKey && (k==='i'||k==='j'||k==='c')){ e.preventDefault(); return false; }
+    if((e.ctrlKey||e.metaKey) && (k==='u'||k==='s')){ e.preventDefault(); return false; }
+  }, true);
+  document.addEventListener('selectstart', e=>{ if(!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) e.preventDefault(); });
+  document.addEventListener('dragstart', e=>e.preventDefault());
+  const shield=document.createElement('div');
+  shield.id='devShield';
+  shield.innerHTML='// A.N.N. SECURITY :: developer tools detected<br><br>Close the inspector to resume the training sim.<br>'+
+    '<span style="color:#4a6b60;font-size:13px">(This sandbox blocks inspection to keep the challenge fair.)</span>';
+  document.body.appendChild(shield);
+  setInterval(()=>{
+    const th=160;
     const open=(window.outerWidth-window.innerWidth>th)||(window.outerHeight-window.innerHeight>th);
-    sh.style.display=open?'flex':'none';},800);
+    shield.style.display = open ? 'flex' : 'none';
+  }, 800);
 })();
+
 document.getElementById('addr').addEventListener('keydown',e=>{ if(e.key==='Enter') connect(); });
 renderAll();
 route('home');
